@@ -21,7 +21,8 @@ const unifrakturMaguntia = UnifrakturMaguntia({
 
 // 🔥 SOLUÇÃO: Transformamos a Metadata em Dinâmica para ler o domínio acessado 🔥
 export async function generateMetadata(): Promise<Metadata> {
-  const headersList = headers();
+  // Adicionamos o 'await' aqui!
+  const headersList = await headers();
   const hostname = headersList.get("host") || "";
 
   // Se o acesso for pelo domínio do dono do SaaS, altera o título e as tags
@@ -29,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
       title: "Ion Master Panel | SuperAdmin",
       description: "Painel de controle orbital e gerenciamento de assinaturas do sistema Ion.",
-      robots: "noindex, nofollow", // Evita que o Google indexe sua página de login mestre
+      robots: "noindex, nofollow", // Evita que o Google indexe sua página de Login mestre
     };
   }
 

@@ -222,7 +222,7 @@ export default function SuperAdminPage() {
     const s = (status || 'TRIAL').toUpperCase();
     if (s === 'ACTIVE') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-400/10 border border-sky-400/20 text-[10px] font-bold uppercase tracking-widest text-sky-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
           <CheckCircle2 size={12} /> Ativo
         </span>
       );
@@ -242,10 +242,10 @@ export default function SuperAdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030303] text-zinc-100 font-sans selection:bg-sky-400/30 font-inter">
+    <div className="min-h-screen bg-[#030303] text-zinc-100 font-sans selection:bg-emerald-500/30 font-inter">
       {/* Background Épico */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-sky-500/10 blur-[150px] rounded-full mix-blend-screen" />
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-emerald-600/10 blur-[150px] rounded-full mix-blend-screen" />
         <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-blue-600/5 blur-[120px] rounded-full mix-blend-screen" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
       </div>
@@ -254,14 +254,14 @@ export default function SuperAdminPage() {
       <header className="bg-[#080808]/80 backdrop-blur-xl border-b border-white/[0.04] sticky top-0 z-40 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4 group cursor-default">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 to-teal-700 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)] group-hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all duration-500 border border-white/10 relative overflow-hidden">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)] group-hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all duration-500 border border-white/10 relative overflow-hidden">
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
               <ShieldAlert size={24} className="text-white relative z-10" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight leading-none group-hover:text-sky-400 transition-colors">ION Master Panel</h1>
+              <h1 className="text-xl font-bold text-white tracking-tight leading-none group-hover:text-emerald-400 transition-colors">ION Master Panel</h1>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="flex w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                <span className="flex w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] font-semibold">SaaS Control Center</p>
               </div>
             </div>
@@ -284,20 +284,20 @@ export default function SuperAdminPage() {
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
             <div className="relative group w-full sm:w-72">
-              <div className="absolute inset-0 bg-sky-400/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-emerald-500/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative flex items-center">
-                <Search size={16} className="absolute left-4 text-zinc-500 group-focus-within:text-sky-400 transition-colors" />
+                <Search size={16} className="absolute left-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors" />
                 <input 
                   type="text" 
                   placeholder="Pesquisar por nome ou link..." 
                   value={search} 
                   onChange={(e) => setSearch(e.target.value)} 
-                  className="w-full bg-[#0d0d0d] border border-white/[0.08] hover:border-white/20 focus:border-sky-400 rounded-xl pl-11 pr-4 py-3 text-sm text-white outline-none transition-all duration-300 placeholder:text-zinc-600 shadow-inner" 
+                  className="w-full bg-[#0d0d0d] border border-white/[0.08] hover:border-white/20 focus:border-emerald-500 rounded-xl pl-11 pr-4 py-3 text-sm text-white outline-none transition-all duration-300 placeholder:text-zinc-600 shadow-inner" 
                 />
               </div>
             </div>
             
-            <button onClick={() => setShowModal(true)} className="group relative flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-teal-600 hover:from-sky-400 hover:to-teal-500 text-white font-bold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] border border-sky-300/30 overflow-hidden shrink-0">
+            <button onClick={() => setShowModal(true)} className="group relative flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] border border-emerald-400/30 overflow-hidden shrink-0">
               <div className="absolute inset-0 w-full h-full bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out skew-x-12" />
               <Plus size={18} className="relative z-10" /> 
               <span className="relative z-10 text-sm uppercase tracking-wider">Novo Tenant</span>
@@ -322,7 +322,7 @@ export default function SuperAdminPage() {
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-8 py-20 text-center"><div className="w-10 h-10 border-2 border-sky-400/20 border-t-sky-400 rounded-full animate-spin mx-auto mb-4" /><p className="text-zinc-500 text-sm uppercase tracking-widest font-semibold animate-pulse">Sincronizando banco de dados...</p></td></tr>
+                  <tr><td colSpan={5} className="px-8 py-20 text-center"><div className="w-10 h-10 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4" /><p className="text-zinc-500 text-sm uppercase tracking-widest font-semibold animate-pulse">Sincronizando banco de dados...</p></td></tr>
                 ) : filteredCompanies.length === 0 ? (
                   <tr><td colSpan={5} className="px-8 py-20 text-center"><div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4"><Search size={24} className="text-zinc-600" /></div><p className="text-zinc-500 text-sm">Nenhum tenant encontrado no radar.</p></td></tr>
                 ) : (
@@ -334,18 +334,18 @@ export default function SuperAdminPage() {
                       
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-sky-400/30 transition-colors">
+                          <div className="w-12 h-12 rounded-2xl bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-emerald-500/30 transition-colors">
                             {company.logo_url ? <Image src={company.logo_url} alt="Logo" width={48} height={48} unoptimized className="w-full h-full object-cover" /> : <Building2 size={20} className="text-zinc-700" />}
                           </div>
                           <div>
-                            <span className="font-bold text-zinc-100 text-base block group-hover:text-sky-400 transition-colors">{company.name}</span>
+                            <span className="font-bold text-zinc-100 text-base block group-hover:text-emerald-400 transition-colors">{company.name}</span>
                             <span className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5 block">Tenant Ativo</span>
                           </div>
                         </div>
                       </td>
 
                       <td className="px-8 py-5">
-                        <a href={`http://${company.subdomain}.lvh.me:3000`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-sky-400 hover:text-sky-300 bg-sky-400/5 hover:bg-sky-400/10 px-3 py-1.5 rounded-lg border border-sky-400/10 transition-all duration-300 group/link">
+                        <a href={`http://${company.subdomain}.lvh.me:3000`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/10 transition-all duration-300 group/link">
                           <LinkIcon size={14} className="group-hover/link:-rotate-12 transition-transform" />
                           <span className="font-mono font-medium">{company.subdomain}.lvh.me</span>
                         </a>
@@ -372,7 +372,7 @@ export default function SuperAdminPage() {
                           
                           {/* Ações Financeiras */}
                           <div className="flex items-center bg-[#0d0d0d] border border-white/5 rounded-xl p-1 shadow-sm">
-                            <button onClick={() => handleCheckout(company.id, (company.status || '').toUpperCase() === 'TRIAL' ? 'trial' : 'subscription')} disabled={checkoutLoadingId === company.id || actionLoadingId === company.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:text-sky-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50">
+                            <button onClick={() => handleCheckout(company.id, (company.status || '').toUpperCase() === 'TRIAL' ? 'trial' : 'subscription')} disabled={checkoutLoadingId === company.id || actionLoadingId === company.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50">
                               <CreditCard size={14} /> Checkout
                             </button>
                             <div className="w-px h-4 bg-white/10 mx-1" />
@@ -386,7 +386,7 @@ export default function SuperAdminPage() {
                             <button onClick={() => handleCompanyAction(company.id, 'trial', 7)} disabled={actionLoadingId === company.id} className="px-3 py-1.5 text-xs font-bold text-amber-500/80 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50">7d</button>
                             <button onClick={() => handleCompanyAction(company.id, 'trial', 15)} disabled={actionLoadingId === company.id} className="px-3 py-1.5 text-xs font-bold text-amber-500/80 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50">15d</button>
                             <div className="w-px h-4 bg-white/10 mx-1" />
-                            <button onClick={() => handleCompanyAction(company.id, 'trial', 30)} disabled={actionLoadingId === company.id} className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-sky-400 bg-sky-400/10 hover:bg-sky-400/20 rounded-lg transition-colors disabled:opacity-50">
+                            <button onClick={() => handleCompanyAction(company.id, 'trial', 30)} disabled={actionLoadingId === company.id} className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition-colors disabled:opacity-50">
                               <Plus size={12} /> 30d
                             </button>
                           </div>
@@ -418,12 +418,12 @@ export default function SuperAdminPage() {
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => !creating && setShowModal(false)} />
           
           <div className="relative bg-[#0a0a0a] border border-white/10 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-teal-500 to-blue-500" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-500" />
             
             <div className="flex items-center justify-between px-8 py-6 border-b border-white/[0.04] bg-[#050505] shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-sky-400/10 flex items-center justify-center"><Building2 size={18} className="text-sky-400" /></div>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><Building2 size={18} className="text-emerald-400" /></div>
                   Provisionar Nova Barbearia
                 </h2>
                 <p className="text-xs text-zinc-500 mt-1 ml-11">Configure os parâmetros do novo inquilino (Tenant).</p>
@@ -444,13 +444,13 @@ export default function SuperAdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Nome Comercial</label>
-                    <input type="text" required value={newName} onChange={handleNameChange} placeholder="Ex: Barbearia do Zé" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-sky-400 focus:bg-[#111] transition-all" />
+                    <input type="text" required value={newName} onChange={handleNameChange} placeholder="Ex: Barbearia do Zé" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:bg-[#111] transition-all" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Subdomínio do Sistema</label>
                     <div className="flex items-center group">
-                      <input type="text" required value={newSubdomain} onChange={(e) => setNewSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))} placeholder="barbeariadoze" className="w-full bg-[#0d0d0d] border border-white/10 border-r-0 rounded-l-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-sky-400 transition-all" />
-                      <span className="bg-[#111] border border-white/10 border-l-0 rounded-r-xl px-4 py-3.5 text-sm text-sky-500/70 font-mono select-none">.lvh.me</span>
+                      <input type="text" required value={newSubdomain} onChange={(e) => setNewSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))} placeholder="barbeariadoze" className="w-full bg-[#0d0d0d] border border-white/10 border-r-0 rounded-l-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all" />
+                      <span className="bg-[#111] border border-white/10 border-l-0 rounded-r-xl px-4 py-3.5 text-sm text-emerald-500/70 font-mono select-none">.lvh.me</span>
                     </div>
                   </div>
                 </div>
@@ -465,16 +465,16 @@ export default function SuperAdminPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5"><UserCircle size={14}/> Nome Completo</label>
-                    <input type="text" required value={adminName} onChange={(e) => setAdminName(e.target.value)} placeholder="Nome do Dono" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-sky-400 focus:bg-[#111] transition-all" />
+                    <input type="text" required value={adminName} onChange={(e) => setAdminName(e.target.value)} placeholder="Nome do Dono" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:bg-[#111] transition-all" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5"><Mail size={14}/> E-mail Corporativo</label>
-                      <input type="email" required value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="contato@barbearia.com" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-sky-400 focus:bg-[#111] transition-all" />
+                      <input type="email" required value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="contato@barbearia.com" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:bg-[#111] transition-all" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5"><Lock size={14}/> Senha Mestra</label>
-                      <input type="password" required value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="••••••••" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-sky-400 focus:bg-[#111] transition-all" />
+                      <input type="password" required value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="••••••••" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:bg-[#111] transition-all" />
                     </div>
                   </div>
                 </div>
@@ -488,11 +488,11 @@ export default function SuperAdminPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   {([7, 15, 30] as const).map((days) => (
-                    <button key={days} type="button" onClick={() => setTrialDays(days)} className={`relative flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-300 ${trialDays === days ? 'border-sky-400 bg-sky-400/10 text-white shadow-[0_0_20px_rgba(16,185,129,0.15)]' : 'border-white/5 bg-[#0d0d0d] text-zinc-500 hover:border-white/20 hover:text-zinc-300'}`}>
+                    <button key={days} type="button" onClick={() => setTrialDays(days)} className={`relative flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-300 ${trialDays === days ? 'border-emerald-500 bg-emerald-500/10 text-white shadow-[0_0_20px_rgba(16,185,129,0.15)]' : 'border-white/5 bg-[#0d0d0d] text-zinc-500 hover:border-white/20 hover:text-zinc-300'}`}>
                       <span className="text-3xl font-black tracking-tighter mb-1">{days}</span>
                       <span className="text-[10px] uppercase tracking-[0.2em] font-bold">Dias Livres</span>
                       {trialDays === days && (
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-sky-400 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in">
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in">
                           <CheckCircle2 size={14} className="text-[#050505]" />
                         </div>
                       )}
@@ -506,7 +506,7 @@ export default function SuperAdminPage() {
                 <button type="button" onClick={() => setShowModal(false)} className="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 font-bold text-sm transition-colors">
                   Cancelar
                 </button>
-                <button type="submit" disabled={creating} className="flex-1 group relative flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-sky-500 to-teal-600 hover:from-sky-400 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden">
+                <button type="submit" disabled={creating} className="flex-1 group relative flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden">
                   <div className="absolute inset-0 w-full h-full bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out skew-x-12" />
                   {creating ? (
                     <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Provisionando Nave...</>

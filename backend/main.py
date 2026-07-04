@@ -67,8 +67,11 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:3000",
+        "https://lattech.com.br",
+        "https://www.lattech.com.br"
     ],
-    allow_origin_regex=r"https?://([a-zA-Z0-9-]+\.)?lvh\.me(:\d+)?",
+    # Adicionamos o lattech.com.br no regex para liberar os subdomínios dinâmicos das barbearias e do painel!
+    allow_origin_regex=r"https?://([a-zA-Z0-9-]+\.)?(lvh\.me|lattech\.com\.br)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

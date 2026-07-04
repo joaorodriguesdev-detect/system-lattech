@@ -1,0 +1,35 @@
+name: Deploy System Lattech
+
+on:
+  push:
+    branches:
+      - main # (Se a sua branch principal se chamar master, troque aqui)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Conectando via SSH e Executando Deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # 1. Entra na pasta raiz do projeto na VPS
+          cd /var/www/lattech-app
+          
+          # 2. Baixa o código mais recente do GitHub
+          git pull origin main
+          
+          # 3. Atualiza e reinicia o Backend (Docker / FastAPI)
+          docker compose up -d --build
+          
+          # 4. Entra na pasta do Frontend e recompila o Next.js
+          cd frontend
+          npm install
+          npm run build
+          
+          # 5. Reinicia o serviço no PM2 para aplicar as mudanças
+          pm2 restart lattech-frontend

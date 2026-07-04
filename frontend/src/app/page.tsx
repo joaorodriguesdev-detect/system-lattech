@@ -38,7 +38,7 @@ export default function Home() {
   // Guarda a Logo da Barbearia
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
-  // 🔥 NOVOS ESTADOS PARA GUARDAR O ENDEREÇO E O MAPA 🔥
+  // Novos estados para guardar o endereço e o mapa
   const [companyAddress, setCompanyAddress] = useState<string | null>(null);
   const [companyMapUrl, setCompanyMapUrl] = useState<string | null>(null);
 
@@ -50,13 +50,21 @@ export default function Home() {
 
   useEffect(() => {
     const hostname = window.location.hostname;
+
+    // 🔥 TRAVA DE PRIORIDADE: Redireciona o domínio administrador direto para o painel 🔥
+    // Impede que o sistema tente buscar uma barbearia chamada "app"
+    if (hostname === 'app.lattech.com.br' || hostname === 'www.lattech.com.br') {
+      window.location.replace('/superadmin');
+      return; // Aborta o resto do código
+    }
+
     let sub = 'mariobarber'; // Fallback de segurança
     
     // Se estiver em produção no seu domínio
     if (hostname.includes('lattech.com.br')) {
       const parts = hostname.split('.');
       // Se for barbearia.lattech.com.br, pega o "barbearia"
-      if (parts.length >= 3 && parts[0] !== 'www') {
+      if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'app') {
         sub = parts[0];
       }
     } 
@@ -76,7 +84,6 @@ export default function Home() {
         if (data.logo_url) setCompanyLogo(data.logo_url);
         setCompanyStatus(data.status || 'active');
         
-        // 🔥 PREENCHENDO AS INFORMAÇÕES DE LOCALIZAÇÃO VINDAS DO BACKEND 🔥
         if (data.address) setCompanyAddress(data.address);
         if (data.map_url) setCompanyMapUrl(data.map_url);
       })
@@ -222,7 +229,6 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 mb-8">
               <div className="lg:col-span-7 flex flex-col gap-6 md:gap-8">
                 
-                {/* 🔥 AQUI ESTÁ A CORREÇÃO: Passando o companyId para o ImageSlider 🔥 */}
                 <ImageSlider companyId={companyId} />
                 
                 <div className="hidden lg:block">

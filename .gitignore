@@ -1,0 +1,13 @@
+# dependencias
+node_modules/
+frontend/node_modules/
+
+# builds do next
+.next/
+frontend/.next/
+out/
+build/
+
+# variaveis de ambiente
+.env
+.env*.local

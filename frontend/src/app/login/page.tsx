@@ -187,12 +187,12 @@ export default function TenantLogin() {
         <p className="text-[9px] text-zinc-600 font-medium tracking-[0.2em] uppercase">
           Desenvolvido por{' '}
           <a 
-            href="https://instagram.com/joaorodriguesdev" 
+            href="https://lattech.com.br/" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-sky-400/80 hover:text-sky-400 font-bold transition-colors"
           >
-            @joaorodriguesdev
+            LATTECH
           </a>
         </p>
       </footer>

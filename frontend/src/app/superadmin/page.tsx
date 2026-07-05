@@ -10,7 +10,6 @@ import {
   CalendarDays, Zap, CreditCard, PowerOff, CheckCircle2, AlertOctagon
 } from 'lucide-react';
 
-
 interface Company {
   id: number;
   name: string;
@@ -42,6 +41,11 @@ export default function SuperAdminPage() {
   const [checkoutLoadingId, setCheckoutLoadingId] = useState<number | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
+  // Estados de Validação e IA
+  const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const [isAiProvisioning, setIsAiProvisioning] = useState(false);
+
   const formatDate = (value?: string | null) => {
     if (!value) return '—';
     const date = new Date(value);
@@ -51,7 +55,6 @@ export default function SuperAdminPage() {
   const fetchCompanies = async () => {
     setLoading(true);
     try {
-      // Como o SuperAdmin usa sessão separada, não precisamos mandar o token de barbeiro aqui
       const res = await fetch(`${API_BASE_URL}/system/companies`);
       if (res.ok) {
         const data = await res.json();
@@ -67,9 +70,36 @@ export default function SuperAdminPage() {
   };
 
   useEffect(() => {
-    // Busca as empresas assim que a página carregar
     fetchCompanies();
   }, []);
+
+  // Efeito de Debounce para validação do Subdomínio
+  useEffect(() => {
+    if (newSubdomain.length < 3) {
+      setIsSlugAvailable(null);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      setIsCheckingSlug(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/system/check-subdomain?slug=${newSubdomain}`);
+        if (res.ok) {
+          const data = await res.json();
+          setIsSlugAvailable(data.available);
+        } else {
+          setIsSlugAvailable(null);
+        }
+      } catch (error) {
+        console.error("Erro ao validar subdomínio", error);
+        setIsSlugAvailable(null);
+      } finally {
+        setIsCheckingSlug(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [newSubdomain]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -79,7 +109,15 @@ export default function SuperAdminPage() {
 
   const handleCreateCompany = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (isSlugAvailable === false) {
+      alert('❌ O subdomínio escolhido já está em uso.');
+      return;
+    }
+
     setCreating(true);
+    setIsAiProvisioning(true);
+
     try {
       const res = await fetch(`${API_BASE_URL}/system/provision-tenant`, {
         method: 'POST',
@@ -98,7 +136,7 @@ export default function SuperAdminPage() {
       });
 
       if (res.ok) {
-        alert('✨ Nave Lançada! Empresa e Administrador criados com sucesso!');
+        alert('🚀 Infraestrutura lançada! A Inteligência Artificial está gerando o cardápio e configurando o sistema em background.');
         setShowModal(false);
         setNewName(''); setNewSubdomain('');
         setAdminName(''); setAdminEmail(''); setAdminPassword('');
@@ -112,6 +150,7 @@ export default function SuperAdminPage() {
       alert('❌ Erro de conexão com o servidor.');
     } finally {
       setCreating(false);
+      setIsAiProvisioning(false);
     }
   };
 
@@ -217,7 +256,6 @@ export default function SuperAdminPage() {
     c.subdomain.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Status Badge Component para ficar bonitão
   const StatusBadge = ({ status }: { status?: string }) => {
     const s = (status || 'TRIAL').toUpperCase();
     if (s === 'ACTIVE') {
@@ -259,7 +297,7 @@ export default function SuperAdminPage() {
               <ShieldAlert size={24} className="text-white relative z-10" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight leading-none group-hover:text-emerald-400 transition-colors">ION Master Panel</h1>
+              <h1 className="text-xl font-bold text-white tracking-tight leading-none group-hover:text-emerald-400 transition-colors">LATTECH Panel</h1>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="flex w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] font-semibold">SaaS Control Center</p>
@@ -275,7 +313,6 @@ export default function SuperAdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10 relative z-10">
-        {/* Top Actions */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
             <h2 className="text-3xl font-bold text-white tracking-tight mb-2">Tenants (Empresas)</h2>
@@ -305,7 +342,6 @@ export default function SuperAdminPage() {
           </div>
         </div>
 
-        {/* Table Card Premium */}
         <div className="bg-[#0a0a0a]/80 backdrop-blur-md border border-white/[0.06] rounded-[2rem] overflow-hidden shadow-2xl relative">
           <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
           
@@ -345,9 +381,9 @@ export default function SuperAdminPage() {
                       </td>
 
                       <td className="px-8 py-5">
-                        <a href={`http://${company.subdomain}.lvh.me:3000`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/10 transition-all duration-300 group/link">
+                        <a href={`https://${company.subdomain}.lattech.com.br`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/10 transition-all duration-300 group/link">
                           <LinkIcon size={14} className="group-hover/link:-rotate-12 transition-transform" />
-                          <span className="font-mono font-medium">{company.subdomain}.lvh.me</span>
+                          <span className="font-mono font-medium">{company.subdomain}.lattech.com.br</span>
                         </a>
                       </td>
 
@@ -370,7 +406,6 @@ export default function SuperAdminPage() {
                       <td className="px-8 py-5 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
                           
-                          {/* Ações Financeiras */}
                           <div className="flex items-center bg-[#0d0d0d] border border-white/5 rounded-xl p-1 shadow-sm">
                             <button onClick={() => handleCheckout(company.id, (company.status || '').toUpperCase() === 'TRIAL' ? 'trial' : 'subscription')} disabled={checkoutLoadingId === company.id || actionLoadingId === company.id} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50">
                               <CreditCard size={14} /> Checkout
@@ -381,7 +416,6 @@ export default function SuperAdminPage() {
                             </button>
                           </div>
                           
-                          {/* Ações de Tempo */}
                           <div className="flex items-center bg-[#0d0d0d] border border-white/5 rounded-xl p-1 shadow-sm">
                             <button onClick={() => handleCompanyAction(company.id, 'trial', 7)} disabled={actionLoadingId === company.id} className="px-3 py-1.5 text-xs font-bold text-amber-500/80 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50">7d</button>
                             <button onClick={() => handleCompanyAction(company.id, 'trial', 15)} disabled={actionLoadingId === company.id} className="px-3 py-1.5 text-xs font-bold text-amber-500/80 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50">15d</button>
@@ -391,7 +425,6 @@ export default function SuperAdminPage() {
                             </button>
                           </div>
 
-                          {/* Ações Destrutivas */}
                           <div className="flex items-center bg-[#0d0d0d] border border-white/5 rounded-xl p-1 shadow-sm ml-2">
                             <button onClick={() => handleCompanyAction(company.id, 'suspend')} disabled={actionLoadingId === company.id} className="p-2 text-rose-500/70 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-50" title="Suspender Acesso">
                               <PowerOff size={16} />
@@ -446,12 +479,27 @@ export default function SuperAdminPage() {
                     <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Nome Comercial</label>
                     <input type="text" required value={newName} onChange={handleNameChange} placeholder="Ex: Barbearia do Zé" className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:bg-[#111] transition-all" />
                   </div>
+                  
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Subdomínio do Sistema</label>
-                    <div className="flex items-center group">
-                      <input type="text" required value={newSubdomain} onChange={(e) => setNewSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))} placeholder="barbeariadoze" className="w-full bg-[#0d0d0d] border border-white/10 border-r-0 rounded-l-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all" />
-                      <span className="bg-[#111] border border-white/10 border-l-0 rounded-r-xl px-4 py-3.5 text-sm text-emerald-500/70 font-mono select-none">.lvh.me</span>
+                    <div className="flex items-center group relative">
+                      <input 
+                        type="text" 
+                        required 
+                        value={newSubdomain} 
+                        onChange={(e) => setNewSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))} 
+                        placeholder="barbeariadoze" 
+                        className={`w-full bg-[#0d0d0d] border border-r-0 rounded-l-xl px-4 py-3.5 text-sm text-white focus:outline-none transition-all ${isSlugAvailable === false ? 'border-rose-500' : 'border-white/10 focus:border-emerald-500'}`} 
+                      />
+                      <span className="bg-[#111] border border-white/10 border-l-0 rounded-r-xl px-4 py-3.5 text-sm text-emerald-500/70 font-mono select-none flex items-center gap-2">
+                        .lattech.com.br
+                        {/* Feedback em tempo real */}
+                        {isCheckingSlug && <div className="w-3 h-3 border-2 border-zinc-500 border-t-zinc-200 rounded-full animate-spin" />}
+                        {!isCheckingSlug && isSlugAvailable === true && <CheckCircle2 size={14} className="text-emerald-500" />}
+                        {!isCheckingSlug && isSlugAvailable === false && <X size={14} className="text-rose-500" />}
+                      </span>
                     </div>
+                    {isSlugAvailable === false && <span className="text-rose-500 text-xs ml-1 block mt-1">Subdomínio já em uso</span>}
                   </div>
                 </div>
               </div>
@@ -506,9 +554,11 @@ export default function SuperAdminPage() {
                 <button type="button" onClick={() => setShowModal(false)} className="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 font-bold text-sm transition-colors">
                   Cancelar
                 </button>
-                <button type="submit" disabled={creating} className="flex-1 group relative flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden">
+                <button type="submit" disabled={creating || isSlugAvailable === false} className="flex-1 group relative flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden">
                   <div className="absolute inset-0 w-full h-full bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out skew-x-12" />
-                  {creating ? (
+                  {isAiProvisioning ? (
+                    <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Acionando Inteligência...</>
+                  ) : creating ? (
                     <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Provisionando Nave...</>
                   ) : (
                     <><Zap size={18} /> Iniciar Operação SaaS</>
@@ -520,7 +570,6 @@ export default function SuperAdminPage() {
         </div>
       )}
 
-      {/* Global Styles para o Scrollbar (pode ir pro globals.css depois) */}
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

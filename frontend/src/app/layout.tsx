@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
   // Se o acesso for pelo domínio do dono do SaaS, altera o título e as tags
   if (hostname.includes("app.lattech.com.br") || hostname.includes("localhost")) {
     return {
-      title: "Ion Master Panel | SuperAdmin",
+      title: "LATTECH Panel | SuperAdmin",
       description: "Painel de controle orbital e gerenciamento de assinaturas do sistema Ion.",
       robots: "noindex, nofollow", // Evita que o Google indexe sua página de Login mestre
     };

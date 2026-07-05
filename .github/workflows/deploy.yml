@@ -17,11 +17,19 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+          # 0. Trava de segurança: Se qualquer comando falhar, o script para e o GitHub acusa ERRO vermelho.
+          set -e
+          
+          # Carrega as variáveis de ambiente do Ubuntu (Garante que npm e pm2 sejam encontrados)
+          source ~/.bashrc || true
+          source ~/.profile || true
+
           # 1. Entra na pasta raiz do projeto na VPS
           cd /var/www/lattech-app
           
-          # 2. Baixa o código mais recente do GitHub
-          git pull origin main
+          # 2. Força a sincronização: Baixa as alterações e esmaga qualquer alteração local
+          git fetch --all
+          git reset --hard origin/main
           
           # 3. Atualiza e reinicia o Backend (Docker / FastAPI)
           docker compose up -d --build

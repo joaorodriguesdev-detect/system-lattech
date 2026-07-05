@@ -288,7 +288,7 @@ export default function Home() {
                           {post.caption && <p className="text-sm leading-relaxed text-zinc-300">{post.caption}</p>}
                         </div>
                         <button onClick={() => handleOpenRating(post.id)} className="w-full mt-4 py-3.5 bg-white/5 hover:bg-violet-600 text-[11px] font-bold tracking-[0.1em] uppercase text-zinc-300 hover:text-white border border-white/[0.08] rounded-2xl transition-all duration-300">
-                          ⭐ Deixar uma avaliação
+                          
                         </button>
                       </div>
                     </div>
@@ -301,17 +301,17 @@ export default function Home() {
                 <div className="w-5 h-5 rounded-md bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.4)]">
                   <Zap size={10} className="text-white" />
                 </div>
-                <span className="text-sm font-bold text-zinc-300 tracking-wider">Ion System</span>
+                <span className="text-sm font-bold text-zinc-300 tracking-wider">LAT System</span>
               </div>
               <p className="text-[10px] text-zinc-500 font-medium tracking-[0.2em] uppercase">
                 Desenvolvido por{' '}
                 <a 
-                  href="https://www.instagram.com/joaorodriguesss_/" 
+                  href="https://lattech.com.br/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-violet-400 hover:text-violet-300 font-bold transition-colors"
                 >
-                  @joaorodriguesdev
+                  LATTECH
                 </a>
               </p>
             </footer>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation'; // <-- Importação Injetada
 import { API_BASE_URL } from '@/lib/api';
 import { clearAuthSession, getAuthToken } from '@/lib/session';
 import {
@@ -23,6 +24,8 @@ interface Company {
 }
 
 export default function SuperAdminPage() {
+  const router = useRouter(); // <-- Instância do Router
+  
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -45,6 +48,20 @@ export default function SuperAdminPage() {
   const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [isAiProvisioning, setIsAiProvisioning] = useState(false);
+
+  // ==========================================
+  // CLIENT GUARD: Segurança de Interface
+  // ==========================================
+  useEffect(() => {
+    // Verifica o token usando sua função e faz um double-check direto nos cookies
+    const token = getAuthToken();
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('superadmin_token='));
+    
+    // Se não existir vestígio do token, expulsa para o login instantaneamente
+    if (!token && !cookieToken) {
+      router.replace('/superadmin/login');
+    }
+  }, [router]);
 
   const formatDate = (value?: string | null) => {
     if (!value) return '—';
@@ -305,7 +322,7 @@ export default function SuperAdminPage() {
             </div>
           </div>
           
-          <button onClick={() => { document.cookie = "superadmin_token=; path=/; max-age=0"; window.location.href = '/superadmin/login'; }} className="group flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all duration-300">
+          <button onClick={() => { document.cookie = "superadmin_token=; path=/; max-age=0"; router.replace('/superadmin/login'); }} className="group flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all duration-300">
             <PowerOff size={16} className="text-rose-500 group-hover:animate-pulse" />
             <span className="text-xs font-bold text-rose-500 uppercase tracking-wider">Desconectar</span>
           </button>

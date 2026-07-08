@@ -1,11 +1,11 @@
+import os
 from sqlmodel import create_engine, SQLModel, Session
 
-# A URL deve apontar para o container do Postgres que rodamos no Docker
-# Lembre-se: 'db' é o nome do serviço que definimos no docker-compose.yml
-DATABASE_URL = "postgresql://user:password@db:5432/ionbarber"
+# 🔥 Busca a URL do banco do arquivo .env. Nunca mais ficará exposta no código!
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@db:5432/ionbarber")
 
-# PostgreSQL não precisa do 'check_same_thread', então removemos o connect_args
-engine = create_engine(DATABASE_URL, echo=True)
+# Em produção, recomenda-se echo=False para não vazar logs de queries SQL
+engine = create_engine(DATABASE_URL, echo=False)
 
 def create_db_and_tables():
     """Função para criar as tabelas no PostgreSQL automaticamente"""

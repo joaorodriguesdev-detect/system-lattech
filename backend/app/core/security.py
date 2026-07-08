@@ -13,9 +13,9 @@ from app.services.billing_service import sync_company_billing_state
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "super-secret-key-mude-em-producao"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "chave-super-secreta-fallback-local")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)

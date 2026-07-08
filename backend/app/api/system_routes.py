@@ -12,7 +12,7 @@ from app.services.billing_service import serialize_company_billing, sync_company
 router = APIRouter(prefix="/system", tags=["System (Super Admin)"])
 
 # A sua Chave Mestra! 
-MASTER_TOKEN = "detect@ion!2001#"
+MASTER_TOKEN = os.getenv("MASTER_TOKEN", "fallback-seguro-local")
 
 # ==========================================
 # MODELOS DE ENTRADA (Pydantic)

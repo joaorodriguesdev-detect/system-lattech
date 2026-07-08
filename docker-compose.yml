@@ -4,13 +4,12 @@ services:
     container_name: ionbarber_db
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: ionbarber
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-ionbarber}
+    # 🔴 PORTAS REMOVIDAS: O PostgreSQL agora está isolado e invisível para a internet!
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ionbarber"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-ionbarber}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,10 +20,8 @@ services:
     restart: always
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://user:password@db:5432/ionbarber
     depends_on:
       db:
         condition: service_healthy
     env_file:
-      - ./backend/.env
+      - ./backend/.env # 🔥 Todos os segredos serão injetados por este ficheiro

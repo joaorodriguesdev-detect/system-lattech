@@ -1,5 +1,5 @@
 # backend/app/core/security.py
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, os
 from typing import Optional
 
 from fastapi import Depends, Header, HTTPException, status

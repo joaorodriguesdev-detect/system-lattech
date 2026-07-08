@@ -64,11 +64,12 @@ app = FastAPI(title="Ion System API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
+        "http://localhost:3000", 
+        "http://localhost:3001",
         "https://lattech.com.br",
-        "https://www.lattech.com.br"
+        "https://app.lattech.com.br",
+        # Opcional: Adicione um curinga temporário se quiser testar tudo sem bloqueios
+        "*" 
     ],
     # Adicionamos o lattech.com.br no regex para liberar os subdomínios dinâmicos das barbearias e do painel!
     allow_origin_regex=r"https?://([a-zA-Z0-9-]+\.)?(lvh\.me|lattech\.com\.br)(:\d+)?",

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation'; // <-- Importação Injetada
+import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
 import { clearAuthSession, getAuthToken } from '@/lib/session';
 import {
@@ -24,7 +24,7 @@ interface Company {
 }
 
 export default function SuperAdminPage() {
-  const router = useRouter(); // <-- Instância do Router
+  const router = useRouter();
   
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,17 +50,22 @@ export default function SuperAdminPage() {
   const [isAiProvisioning, setIsAiProvisioning] = useState(false);
 
   // ==========================================
-  // CLIENT GUARD: Segurança de Interface
+  // CLIENT GUARD BLINDADO (CORRIGIDO)
   // ==========================================
   useEffect(() => {
-    // Verifica o token usando sua função e faz um double-check direto nos cookies
-    const token = getAuthToken();
-    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('superadmin_token='));
-    
-    // Se não existir vestígio do token, expulsa para o login instantaneamente
-    if (!token && !cookieToken) {
-      router.replace('/superadmin/login');
-    }
+    const checkAccess = () => {
+      const token = getAuthToken();
+      // Extrai APENAS o valor do cookie usando Regex
+      const cookieMatch = document.cookie.match(/(^| )superadmin_token=([^;]+)/);
+      const cookieValue = cookieMatch ? cookieMatch[2] : null;
+      
+      // Se não houver token válido, expulsa
+      if (!token && (!cookieValue || cookieValue.trim() === '')) {
+        router.replace('/superadmin/login');
+      }
+    };
+
+    checkAccess();
   }, [router]);
 
   const formatDate = (value?: string | null) => {
@@ -69,15 +74,24 @@ export default function SuperAdminPage() {
     return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
   };
 
+  // ==========================================
+  // FETCH DAS EMPRESAS (CORRIGIDO)
+  // ==========================================
   const fetchCompanies = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/system/companies`);
+      // Adicionado o header exigido pela nova segurança do backend
+      const res = await fetch(`${API_BASE_URL}/system/companies`, {
+        headers: {
+          'x-master-token': 'detect@ion!2001#'
+        }
+      });
+      
       if (res.ok) {
         const data = await res.json();
         setCompanies(Array.isArray(data) ? data : []);
       } else {
-        console.error("Erro na resposta do servidor");
+        console.error("Erro na resposta do servidor (provavelmente 401 Não Autorizado)");
       }
     } catch (err) {
       console.error("Erro ao buscar empresas", err);

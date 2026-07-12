@@ -21,31 +21,46 @@ const unifrakturMaguntia = UnifrakturMaguntia({
 
 // 🔥 SOLUÇÃO: Transformamos a Metadata em Dinâmica para ler o domínio acessado 🔥
 export async function generateMetadata(): Promise<Metadata> {
-  // Adicionamos o 'await' aqui!
   const headersList = await headers();
-  const hostname = headersList.get("host") || "";
+  const host = headersList.get("host") || "";
 
-  // Se o acesso for pelo domínio do dono do SaaS, altera o título e as tags
-  if (hostname.includes("app.lattech.com.br") || hostname.includes("localhost")) {
+  // Lógica do SuperAdmin
+  if (host.includes("app.lattech.com.br") || host.includes("localhost")) {
     return {
-      title: "LATTECH Panel | SuperAdmin",
-      description: "Painel de controle orbital e gerenciamento de assinaturas do sistema Ion.",
-      robots: "noindex, nofollow", // Evita que o Google indexe sua página de Login mestre
+      title: "Ion Master Panel | SuperAdmin",
+      description: "Painel de controle orbital e gerenciamento de assinaturas.",
+      robots: "noindex, nofollow",
     };
   }
 
-  // Caso contrário, renderiza a metadata original da barbearia inquilina
+  // Lógica Dinâmica da Barbearia
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const response = await fetch(`${apiUrl}/api/v1/tenants/lookup?domain=${host}`);
+    
+    if (response.ok) {
+      const tenant = await response.json();
+      return {
+        title: `${tenant.name} | Agendamento & Gestão`,
+        description: `Agendamento online oficial para ${tenant.name}.`,
+        icons: {
+          icon: tenant.logo_url,
+          apple: tenant.logo_url,
+        },
+        openGraph: {
+          title: tenant.name,
+          images: [tenant.logo_url],
+        }
+      };
+    }
+  } catch (error) {
+    console.error("Erro ao carregar tenant na metadata", error);
+  }
+
+  // Fallback se algo der errado
   return {
-    title: "LATTECH | Agendamento & Gestão",
-    description:
-      "Sistema completo para barbearias: agendamento online, feed de trabalhos, avaliações e painel administrativo.",
-    keywords: ["barbearia", "agendamento", "barbeiro", "corte", "gestão"],
-    authors: [{ name: "LATTECH Sistemas" }],
-    openGraph: {
-      title: "LATTECH Sistemas — Sistema de Agendamento Online",
-      description: "Agendamento online e gestão para sua barbearia",
-      type: "website",
-    },
+    title: "Agendamento | Barbearia",
+    description: "Sistema de agendamento online.",
   };
 }
 

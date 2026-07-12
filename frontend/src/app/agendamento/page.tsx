@@ -21,6 +21,7 @@ export default function AgendamentoPage() {
   const [loading, setLoading] = useState(true);
   
   const [companyId, setCompanyId] = useState<number | null>(null);
+  const [companyPhone, setCompanyPhone] = useState<string>(''); // 🔥 NOVO ESTADO
   const [step, setStep] = useState<'services' | 'dados' | 'confirmacao'>('services');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
@@ -33,9 +34,7 @@ export default function AgendamentoPage() {
   const [sucesso, setSucesso] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState('');
 
-  const ADMIN_WHATSAPP = '5541995707907';
-
-  // 👇 DETETIVE SAAS NATIVO (Extração do Subdomínio) 👇
+  // 👇 DETETIVE SAAS NATIVO (Extração do Subdomínio e Dados da Empresa) 👇
   useEffect(() => {
     const hostname = window.location.hostname;
     let sub = 'mariobarber'; 
@@ -54,6 +53,10 @@ export default function AgendamentoPage() {
       })
       .then(data => {
         setCompanyId(data.id); 
+        // 🔥 Salva o número da empresa, limpando traços e espaços
+        if (data.whatsapp_number) {
+            setCompanyPhone(data.whatsapp_number.replace(/\D/g, ''));
+        }
       })
       .catch(err => {
         console.error("Erro ao descobrir empresa:", err);
@@ -149,7 +152,11 @@ export default function AgendamentoPage() {
       if (res.ok) {
         const dataFormatada = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR');
         const mensagem = `🪒 *Novo Agendamento!*\n\n👤 *Cliente:* ${nome}\n📞 *Tel:* ${telefone}\n✂️ *Serviço:* ${selectedService.name}\n💰 *Valor:* R$ ${selectedService.price.toFixed(2)}\n📅 *Data:* ${dataFormatada}\n⏰ *Horário:* ${hora}\n\n✅ Aguardando aprovação no painel!`;
-        const link = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
+        
+        // 🔥 Troca o número fixo pelo número cadastrado da empresa
+        const numDestino = companyPhone || '5541995707907'; // Mantém o seu de fallback por segurança caso não tenha configurado ainda
+        const link = `https://wa.me/${numDestino}?text=${encodeURIComponent(mensagem)}`;
+        
         setWhatsappLink(link);
         setSucesso(true);
       } else {
@@ -226,7 +233,8 @@ export default function AgendamentoPage() {
               <div className="relative group cursor-pointer">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-sky-400 via-green-500 to-teal-400 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
                 <a
-                  href={`https://wa.me/${ADMIN_WHATSAPP}?text=Oi! Gostaria de agendar um horário.`}
+                  // 🔥 Atualizado link de IA
+                  href={`https://wa.me/${companyPhone || '5541995707907'}?text=Oi! Gostaria de agendar um horário.`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative flex flex-col items-center justify-center gap-3 bg-zinc-950 border border-white/10 p-6 rounded-2xl hover:bg-zinc-900 transition-all active:scale-[0.98]"

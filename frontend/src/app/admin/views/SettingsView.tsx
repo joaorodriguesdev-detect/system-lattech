@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { Settings, Image as ImageIcon, ShieldAlert, Clock, Check, Ban, MapPin, Trash2, Upload } from 'lucide-react';
+import { Settings, Image as ImageIcon, ShieldAlert, Clock, Check, Ban, MapPin, Trash2, Upload, Phone } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 export default function SettingsView({ token }: { token: string }) {
-    const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [currentLogo, setCurrentLogo] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -13,9 +13,10 @@ export default function SettingsView({ token }: { token: string }) {
   const [companyPlan, setCompanyPlan] = useState<any>(null);
   const [loadingPlan, setLoadingPlan] = useState(true);
 
-    // 🔥 NOVOS ESTADOS PARA O MAPA
+  // 🔥 NOVOS ESTADOS PARA O MAPA E WHATSAPP
   const [address, setAddress] = useState('');
   const [mapUrl, setMapUrl] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [savingLocation, setSavingLocation] = useState(false);
 
   // 🔥 ESTADOS PARA BANNERS
@@ -43,9 +44,10 @@ export default function SettingsView({ token }: { token: string }) {
           setCompanyPlan({ ...data, dias_restantes: dias });
           if (data.logo_url) setCurrentLogo(data.logo_url);
           
-          // Preenche os dados do mapa se já existirem
+          // Preenche os dados de localização e contato
           if (data.address) setAddress(data.address);
           if (data.map_url) setMapUrl(data.map_url);
+          if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
 
         }
       } catch (err) {
@@ -54,7 +56,7 @@ export default function SettingsView({ token }: { token: string }) {
         setLoadingPlan(false);
       }
     };
-        fetchCompanyPlan();
+    fetchCompanyPlan();
     fetchBanners();
   }, [token]);
 
@@ -165,19 +167,19 @@ export default function SettingsView({ token }: { token: string }) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ address: address, map_url: mapUrl }),
+        body: JSON.stringify({ address: address, map_url: mapUrl, whatsapp_number: whatsappNumber }),
       });
       if (res.ok) {
-        alert('Localização salva com sucesso!');
+        alert('Configurações salvas com sucesso!');
       } else {
-        alert('Erro ao salvar localização.');
+        alert('Erro ao salvar dados.');
       }
     } catch { alert('Erro de conexão.'); } 
     finally { setSavingLocation(false); }
   };
 
   return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 md:p-8 max-w-3xl mx-auto">
         
         <div className="mb-8 border-b border-white/5 pb-6">
@@ -186,9 +188,8 @@ export default function SettingsView({ token }: { token: string }) {
           </h2>
         </div>
 
-        {/* --- FORMULÁRIO DE LOGO (MANTIDO) --- */}
+        {/* --- FORMULÁRIO DE LOGO --- */}
         <form onSubmit={handleLogoUpload} className="space-y-8 mb-10">
-            {/* ... o código do seu logo que eu mantive ... */}
             <div>
               <h3 className="text-sm font-bold text-zinc-300 mb-4 flex items-center gap-2">
                 <ImageIcon size={16} className="text-sky-400"/> Logo da Empresa
@@ -215,7 +216,7 @@ export default function SettingsView({ token }: { token: string }) {
             </div>
         </form>
 
-        {/* 🔥 SEÇÃO DE BANNERS DA VITRINE 🔥 */}
+        {/* --- SEÇÃO DE BANNERS DA VITRINE --- */}
         <div className="mb-10 border-t border-white/5 pt-8">
           <h3 className="text-sm font-bold text-zinc-300 mb-4 flex items-center gap-2">
             <ImageIcon size={16} className="text-amber-400" /> Banners da Vitrine (Máx: 5)
@@ -285,14 +286,21 @@ export default function SettingsView({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* 🔥 NOVO FORMULÁRIO DE MAPA 🔥 */}
+        {/* 🔥 NOVO FORMULÁRIO DE CONTATO E MAPA 🔥 */}
         <form onSubmit={handleSaveLocation} className="space-y-4 mb-10 border-t border-white/5 pt-8">
           <h3 className="text-sm font-bold text-zinc-300 mb-4 flex items-center gap-2">
-            <MapPin size={16} className="text-blue-400"/> Localização e Mapa
+            <MapPin size={16} className="text-blue-400"/> Localização e Contato
           </h3>
           <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-6 space-y-4">
             <div>
-              <label className="block text-xs text-zinc-400 font-semibold uppercase tracking-widest mb-2">Endereço Escrito</label>
+              <label className="block text-xs text-zinc-400 font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <Phone size={14} className="text-green-500" /> WhatsApp da Barbearia
+              </label>
+              <input type="text" value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} placeholder="Ex: 5541999999999" className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
+              <p className="text-xs text-zinc-500 mt-2">Os agendamentos do site serão enviados para este número (adicione apenas números com DDD e DDI 55).</p>
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 font-semibold uppercase tracking-widest mb-2 mt-6">Endereço Escrito</label>
               <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Ex: Rua XV de Novembro, 1000 - Centro" className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
             </div>
             <div>
@@ -300,18 +308,13 @@ export default function SettingsView({ token }: { token: string }) {
               <input type="text" value={mapUrl} onChange={e => setMapUrl(e.target.value)} placeholder="Cole apenas o link que fica dentro do src='...'" className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
               <p className="text-xs text-zinc-500 mt-2">Vá no Google Maps &gt; Compartilhar &gt; Incorporar Mapa &gt; Copie apenas a URL que está dentro das aspas do <b>src</b>.</p>
             </div>
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-4">
               <button disabled={savingLocation} type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-2.5 rounded-xl disabled:opacity-50">
-                {savingLocation ? 'Salvando...' : 'Salvar Localização'}
+                {savingLocation ? 'Salvando...' : 'Salvar Dados'}
               </button>
             </div>
           </div>
         </form>
-
-        {/* --- PLANO (MANTIDO) --- */}
-        <div className="mt-8 border-t border-white/5 pt-8">
-           {/* Seu código de plano continua aqui normalmente */}
-        </div>
 
       </div>
     </div>

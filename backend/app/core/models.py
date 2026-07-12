@@ -26,6 +26,7 @@ class ServiceType(str, Enum):
     SOBRANCELHA = "Sobrancelha"
     COMBO_CABELO_BARBA = "Cabelo + Barba"
     COMBO_COMPLETO = "Completo (Cabelo + Barba + Sobrancelha)"
+    
 class TenantStatus(str, Enum):
     TRIAL = "trial"
     ACTIVE = "active"
@@ -48,6 +49,7 @@ class Company(SQLModel, table=True):
     # 🔥 CAMPOS NOVOS ADICIONADOS AQUI:
     address: Optional[str] = Field(default=None)
     map_url: Optional[str] = Field(default=None)
+    whatsapp_number: Optional[str] = Field(default=None) # 🔥 ADICIONADO NÚMERO DO WHATSAPP
     
     asaas_customer_id: Optional[str] = Field(default=None, index=True)
     subscription_id: Optional[str] = Field(default=None, index=True)
@@ -68,7 +70,6 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
-    # 🔥 CAMPO ADICIONADO PARA SALVAR A COMISSÃO FIXA
     commission_value: float = Field(default=0.0)
 
     barber_appointments: List["Appointment"] = Relationship(
@@ -76,7 +77,6 @@ class User(SQLModel, table=True):
         sa_relationship_kwargs={"foreign_keys": "Appointment.barber_id"}
     )
     
-    # 🔥 RELAÇÃO DO CLIENTE CORRIGIDA AQUI:
     customer_appointments: List["Appointment"] = Relationship(
         back_populates="customer",
         sa_relationship_kwargs={"foreign_keys": "Appointment.customer_id"}
@@ -217,7 +217,6 @@ class CompanyBanner(SQLModel, table=True):
     image_url: str
     order: int = Field(description="Ordem de 1 a 5 no carrossel")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
 
 class Product(SQLModel, table=True):
     __tablename__ = "products"

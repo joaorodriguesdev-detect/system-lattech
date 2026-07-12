@@ -1,15 +1,15 @@
 ﻿from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlmodel import Session, text
+from sqlmodel import Session, text, select
 
 # Importa as configurações do banco
 from app.core.database import create_db_and_tables, engine
 from app.core import models
 
-# Importa TODAS as rotas (incluindo o billing que estava faltando!)
+# Importa TODAS as rotas
 from app.api import (
     auth, feed_routes, users, appointments, 
     admin_routes, services_routes, review_routes, 
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
     yield
     print("Desligando o servidor...")
     
-app = FastAPI(title="Ion System API", lifespan=lifespan)
+app = FastAPI(title="Lat System API", lifespan=lifespan)
 
 # Configuração do CORS
 app.add_middleware(
@@ -80,7 +80,7 @@ UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# 🔥 AQUI ESTÁ A CORREÇÃO: TODAS AS ROTAS PLUGADAS 🔥
+# 🔥 ROTAS PLUGADAS 🔥
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(appointments.router)
@@ -91,8 +91,46 @@ app.include_router(review_routes.router)
 app.include_router(post_review_routes.router)
 app.include_router(bot_routes.router)
 app.include_router(system_routes.router)
-app.include_router(billing_routes.router) # O botão do SuperAdmin agora funciona!
-app.include_router(products_routes.router) # Vitrine de Produtos (pública)
+app.include_router(billing_routes.router) 
+app.include_router(products_routes.router) 
+
+
+# 👇 NOVA ROTA DE LOOKUP PARA O PWA DINÂMICO 👇
+@app.get("/api/v1/tenants/lookup")
+def lookup_tenant(domain: str):
+    """
+    Endpoint consumido pelo Next.js (manifest.ts e layout.tsx) para gerar o App PWA.
+    Extrai o subdomínio da URL e retorna os dados visuais da barbearia.
+    """
+    # 1. Limpa o domínio e extrai o identificador (ex: mariobarber.lattech.com.br -> mariobarber)
+    host = domain.split(":")[0]
+    slug = host.split(".")[0]
+    
+    # Fallback para você conseguir testar na sua máquina local
+    if slug in ["localhost", "127", "app", "api"]:
+        slug = "mariobarber" # Substitua pelo slug de teste que existe no seu banco
+        
+    with Session(engine) as session:
+        try:
+            # 🔥 ATENÇÃO AQUI 🔥 
+            # Altere 'subdominio' para 'slug' caso essa seja a coluna real no seu banco de dados
+            statement = select(models.Company).where(models.Company.subdominio == slug)
+            company = session.exec(statement).first()
+            
+            if not company:
+                raise HTTPException(status_code=404, detail="Tenant não encontrado")
+                
+            return {
+                # Usa getattr para evitar quebrar o código caso a coluna se chame 'name' em vez de 'nome'
+                "name": getattr(company, "nome", getattr(company, "name", "Barbearia")), 
+                "slug": slug,
+                "theme_color": "#050505", 
+                "logo_url": company.logo_url or "https://via.placeholder.com/512"
+            }
+        except Exception as e:
+            print(f"Erro na busca do tenant no banco de dados: {e}")
+            raise HTTPException(status_code=404, detail="Not Found")
+
 
 @app.get("/")
 async def root():

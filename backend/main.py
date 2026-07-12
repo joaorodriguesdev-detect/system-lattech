@@ -112,17 +112,15 @@ def lookup_tenant(domain: str):
         
     with Session(engine) as session:
         try:
-            # 🔥 ATENÇÃO AQUI 🔥 
-            # Altere 'subdominio' para 'slug' caso essa seja a coluna real no seu banco de dados
-            statement = select(models.Company).where(models.Company.subdominio == slug)
+            # 🔥 CORREÇÃO: Agora usando os nomes exatos do seu models.py 🔥
+            statement = select(models.Company).where(models.Company.subdomain == slug)
             company = session.exec(statement).first()
             
             if not company:
                 raise HTTPException(status_code=404, detail="Tenant não encontrado")
                 
             return {
-                # Usa getattr para evitar quebrar o código caso a coluna se chame 'name' em vez de 'nome'
-                "name": getattr(company, "nome", getattr(company, "name", "Barbearia")), 
+                "name": company.name, # Lendo 'name' diretamente
                 "slug": slug,
                 "theme_color": "#050505", 
                 "logo_url": company.logo_url or "https://via.placeholder.com/512"

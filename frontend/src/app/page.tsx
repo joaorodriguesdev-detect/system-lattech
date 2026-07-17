@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, MapPin, Star, ChevronRight, X, Image as ImageIcon, Scissors, Zap } from 'lucide-react';
+import { CalendarDays, MapPin, Star, ChevronRight, X, Image as ImageIcon, Scissors, Zap, Check } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 // Seus componentes originais 

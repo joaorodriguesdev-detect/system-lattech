@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
 import { 
   CalendarDays, Clock, Scissors, Phone, User, 
-  CheckCircle, ArrowLeft, MessageCircle, Bot, Sparkles, MessageSquare 
+  CheckCircle, ArrowLeft, MessageCircle, ShoppingCart, 
+  Trash2, Plus, Check, Package
 } from 'lucide-react';
 
 interface Service {
@@ -15,15 +16,42 @@ interface Service {
   duration_minutes: number;
 }
 
+interface Product {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  active: boolean;
+}
+
+interface CartItem {
+  id: number;
+  type: 'service' | 'product';
+  name: string;
+  price: number;
+}
+
 export default function AgendamentoPage() {
   const router = useRouter();
+  
+  // ==========================================
+  // ESTADOS DE DADOS
+  // ==========================================
   const [services, setServices] = useState<Service[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
   
   const [companyId, setCompanyId] = useState<number | null>(null);
-  const [companyPhone, setCompanyPhone] = useState<string>(''); // 🔥 NOVO ESTADO
-  const [step, setStep] = useState<'services' | 'dados' | 'confirmacao'>('services');
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [companyPhone, setCompanyPhone] = useState<string>(''); 
+  const [companyName, setCompanyName] = useState<string>('');
+
+  // ==========================================
+  // ESTADOS DO CARRINHO E CHECKOUT
+  // ==========================================
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -34,12 +62,13 @@ export default function AgendamentoPage() {
   const [sucesso, setSucesso] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState('');
 
-  // 👇 DETETIVE SAAS NATIVO (Extração do Subdomínio e Dados da Empresa) 👇
+  // ==========================================
+  // INICIALIZAÇÃO (Lógica de Subdomínio)
+  // ==========================================
   useEffect(() => {
     const hostname = window.location.hostname;
     let sub = 'mariobarber'; 
     
-    // Leitura inteligente
     if (hostname.includes('lvh.me')) {
       sub = hostname.replace('.lvh.me', '');
     } else if (hostname !== 'localhost' && hostname.includes('.')) {
@@ -53,7 +82,7 @@ export default function AgendamentoPage() {
       })
       .then(data => {
         setCompanyId(data.id); 
-        // 🔥 Salva o número da empresa, limpando traços e espaços
+        if (data.name) setCompanyName(data.name);
         if (data.whatsapp_number) {
             setCompanyPhone(data.whatsapp_number.replace(/\D/g, ''));
         }
@@ -68,21 +97,29 @@ export default function AgendamentoPage() {
     if (companyId === null) return; 
 
     setLoading(true);
-    fetch(`${API_BASE_URL}/services/?company_id=${companyId}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Erro no backend');
-        return res.json();
-      })
-      .then((data) => {
-        setServices(Array.isArray(data) ? data : []);
+    
+    // Busca Serviços
+    const fetchServices = fetch(`${API_BASE_URL}/services/?company_id=${companyId}`)
+      .then(res => res.ok ? res.json() : []);
+      
+    // Busca Produtos
+    const fetchProducts = fetch(`${API_BASE_URL}/products/?company_id=${companyId}`)
+      .then(res => res.ok ? res.json() : []);
+
+    Promise.all([fetchServices, fetchProducts])
+      .then(([servicesData, productsData]) => {
+        setServices(Array.isArray(servicesData) ? servicesData : []);
+        setProducts(Array.isArray(productsData) ? productsData.filter((p: Product) => p.active) : []);
         setLoading(false);
       })
       .catch(() => {
-        setServices([]);
         setLoading(false);
       });
   }, [companyId]);
 
+  // ==========================================
+  // FUNÇÕES AUXILIARES
+  // ==========================================
   const gerarDatas = () => {
     const datas: { value: string; label: string }[] = [];
     const hoje = new Date();
@@ -107,58 +144,83 @@ export default function AgendamentoPage() {
     return horarios;
   };
 
-  const handleSelecionarServico = (svc: Service) => {
-    setSelectedService(svc);
-    setStep('dados');
+  const toggleCartItem = (item: CartItem) => {
+    setCart(prev => {
+      const exists = prev.find(i => i.id === item.id && i.type === item.type);
+      if (exists) {
+        return prev.filter(i => !(i.id === item.id && i.type === item.type));
+      }
+      return [...prev, item];
+    });
   };
 
-  const handleVoltar = () => {
-    if (step === 'dados') {
-      setStep('services');
-    } else if (step === 'confirmacao') {
-      setStep('dados');
-    }
+  const isInCart = (id: number, type: 'service' | 'product') => {
+    return cart.some(i => i.id === id && i.type === type);
   };
 
-  const handleContinuarDados = (e: FormEvent) => {
+  const cartTotal = cart.reduce((acc, item) => acc + item.price, 0);
+
+  // ==========================================
+  // SUBMISSÃO DO AGENDAMENTO (CARRINHO)
+  // ==========================================
+  const handleConfirmar = async (e: FormEvent) => {
     e.preventDefault();
+    
     if (!nome.trim() || !telefone.trim() || !data || !hora) {
-      alert('Preencha todos os campos.');
+      alert('Preencha todos os campos obrigatórios (Nome, WhatsApp, Data e Hora).');
       return;
     }
-    setStep('confirmacao');
-  };
 
-  const handleConfirmar = async () => {
-    if (!selectedService || companyId === null) return;
+    const cartServices = cart.filter(i => i.type === 'service');
+    const cartProducts = cart.filter(i => i.type === 'product');
+
+    if (cartServices.length === 0) {
+      alert('Seu carrinho precisa ter pelo menos 1 serviço para podermos agendar um horário.');
+      return;
+    }
+
     setEnviando(true);
-
     const appointmentDate = new Date(`${data}T${hora}:00`);
+    
+    // Constrói as anotações detalhadas para o banco de dados
+    let notesText = `Agendamento via app (Carrinho).`;
+    if (cartServices.length > 1) {
+      notesText += `\nServiços extras: ${cartServices.slice(1).map(s => s.name).join(', ')}.`;
+    }
+    if (cartProducts.length > 0) {
+      notesText += `\nProdutos reservados: ${cartProducts.map(p => p.name).join(', ')}.`;
+    }
 
     try {
+      // API exige um service_id. Mandamos o primeiro do carrinho.
       const res = await fetch(`${API_BASE_URL}/appointments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           company_id: companyId,
-          service_id: selectedService.id,
+          service_id: cartServices[0].id, 
           appointment_date: appointmentDate.toISOString(),
           customer_name: nome,
           customer_phone: telefone,
-          notes: `Agendamento efetuado via site`,
+          notes: notesText,
         }),
       });
 
       if (res.ok) {
         const dataFormatada = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR');
-        const mensagem = `🪒 *Novo Agendamento!*\n\n👤 *Cliente:* ${nome}\n📞 *Tel:* ${telefone}\n✂️ *Serviço:* ${selectedService.name}\n💰 *Valor:* R$ ${selectedService.price.toFixed(2)}\n📅 *Data:* ${dataFormatada}\n⏰ *Horário:* ${hora}\n\n✅ Aguardando aprovação no painel!`;
         
-        // 🔥 Troca o número fixo pelo número cadastrado da empresa
-        const numDestino = companyPhone || '5541995707907'; // Mantém o seu de fallback por segurança caso não tenha configurado ainda
-        const link = `https://wa.me/${numDestino}?text=${encodeURIComponent(mensagem)}`;
+        let msg = `🪒 *Novo Agendamento!*\n\n👤 *Cliente:* ${nome}\n📞 *Tel:* ${telefone}\n📅 *Data:* ${dataFormatada}\n⏰ *Horário:* ${hora}\n\n`;
         
-        setWhatsappLink(link);
+        msg += `🛒 *Itens do Carrinho:*\n`;
+        cartServices.forEach(s => msg += `✂️ ${s.name} - R$ ${s.price.toFixed(2)}\n`);
+        cartProducts.forEach(p => msg += `🛍️ ${p.name} - R$ ${p.price.toFixed(2)}\n`);
+        
+        msg += `\n💰 *Total a pagar:* R$ ${cartTotal.toFixed(2)}\n\n✅ Aguardando aprovação no painel!`;
+
+        const numDestino = companyPhone || '5541995707907'; 
+        setWhatsappLink(`https://wa.me/${numDestino}?text=${encodeURIComponent(msg)}`);
         setSucesso(true);
+        setIsCartOpen(false);
       } else {
         const err = await res.json();
         alert("Erro retornado pelo servidor: " + JSON.stringify(err.detail || err, null, 2));
@@ -170,31 +232,34 @@ export default function AgendamentoPage() {
     }
   };
 
+  // ==========================================
+  // TELA DE SUCESSO
+  // ==========================================
   if (sucesso) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="text-center space-y-6 max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-sky-400/20 flex items-center justify-center mx-auto">
-            <CheckCircle size={32} className="text-sky-400" />
+      <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-6">
+        <div className="text-center space-y-6 max-w-sm w-full">
+          <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto border border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.2)]">
+            <CheckCircle size={40} className="text-blue-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">Agendamento Enviado!</h1>
-            <p className="text-zinc-400 text-sm mt-2">Seu horário foi registrado e enviado para aprovação.</p>
+            <h1 className="text-2xl font-bold text-white">Reserva Concluída!</h1>
+            <p className="text-zinc-400 text-sm mt-2">Seu pedido foi registrado e enviado para a barbearia.</p>
           </div>
 
           <a
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 rounded-2xl transition-all active:scale-[0.98]"
+            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-500 hover:to-sky-300 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20 border border-white/10"
           >
             <MessageCircle size={20} />
-            Falar com o Barbeiro
+            Avisar Barbeiro no WhatsApp
           </a>
 
           <button
             onClick={() => router.push('/')}
-            className="w-full py-3 bg-zinc-800 text-zinc-300 rounded-xl text-sm border border-zinc-700 hover:bg-zinc-700 transition"
+            className="w-full py-4 bg-[#121214] border border-white/5 text-zinc-300 hover:text-white hover:bg-[#18181b] rounded-xl text-sm font-bold transition"
           >
             Voltar para Home
           </button>
@@ -203,248 +268,287 @@ export default function AgendamentoPage() {
     );
   }
 
+  // ==========================================
+  // TELA PRINCIPAL (VITRINE & SERVIÇOS)
+  // ==========================================
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="bg-black border-b border-white/[0.06] h-16 flex items-center px-5 sticky top-0 z-40">
-        <div className="flex items-center gap-3 w-full">
-          <button onClick={() => step === 'services' ? router.push('/') : handleVoltar()} className="text-zinc-400 hover:text-white transition">
+    <div className="min-h-screen bg-[#050505] text-white font-sans pb-24 relative">
+      
+      {/* HEADER */}
+      <header className="bg-black/50 backdrop-blur-md border-b border-white/[0.04] h-16 flex items-center px-4 sticky top-0 z-40">
+        <div className="flex items-center w-full">
+          <button onClick={() => router.push('/')} className="p-2 -ml-2 text-zinc-400 hover:text-white transition">
             <ArrowLeft size={20} />
           </button>
-          <div>
-            <h1 className="text-sm font-bold">Agendar Horário</h1>
-            <p className="text-[10px] text-zinc-500">
-              {step === 'services' && 'Escolha como deseja agendar'}
-              {step === 'dados' && 'Seus dados'}
-              {step === 'confirmacao' && 'Confirme o agendamento'}
-            </p>
-          </div>
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${step === 'services' ? 'bg-amber-500' : 'bg-zinc-700'}`} />
-            <span className={`w-2 h-2 rounded-full ${step === 'dados' ? 'bg-amber-500' : 'bg-zinc-700'}`} />
-            <span className={`w-2 h-2 rounded-full ${step === 'confirmacao' ? 'bg-amber-500' : 'bg-zinc-700'}`} />
+          <div className="ml-2">
+            <h1 className="text-sm font-bold text-white tracking-wide">Monte seu pedido</h1>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{companyName}</p>
           </div>
         </div>
       </header>
 
-      <div className="p-5 space-y-4">
-        {step === 'services' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-8">
-              <div className="relative group cursor-pointer">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-sky-400 via-green-500 to-teal-400 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
-                <a
-                  // 🔥 Atualizado link de IA
-                  href={`https://wa.me/${companyPhone || '5541995707907'}?text=Oi! Gostaria de agendar um horário.`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative flex flex-col items-center justify-center gap-3 bg-zinc-950 border border-white/10 p-6 rounded-2xl hover:bg-zinc-900 transition-all active:scale-[0.98]"
-                >
-                  <div className="flex items-center justify-center w-14 h-14 rounded-full bg-sky-400/10 mb-1 border border-sky-400/20">
-                    <Bot size={28} className="text-sky-400 animate-pulse" />
-                  </div>
-                  <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                    Atendimento com IA <Sparkles size={18} className="text-amber-400" />
-                  </h2>
-                  <p className="text-sm text-zinc-400 text-center leading-relaxed px-2">
-                    Sem filas, sem formulários. Nossa IA agenda seu horário direto no WhatsApp em segundos!
-                  </p>
-                  <div className="mt-3 flex items-center gap-2 text-sky-400 text-xs font-bold uppercase tracking-wider bg-sky-400/10 px-5 py-2.5 rounded-full border border-sky-400/20">
-                    <MessageSquare size={16} />
-                    Agendar pelo WhatsApp
-                  </div>
-                </a>
-              </div>
-            </div>
+      <div className="p-4 space-y-6 max-w-2xl mx-auto">
+        
+        {/* ABAS (TABS) */}
+        <div className="flex p-1 bg-[#121214] border border-white/5 rounded-xl">
+          <button 
+            onClick={() => setActiveTab('services')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'services' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Scissors size={14} /> Serviços
+          </button>
+          <button 
+            onClick={() => setActiveTab('products')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'products' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Package size={14} /> Loja / Produtos
+          </button>
+        </div>
 
-            <div className="flex items-center gap-4 mb-6 opacity-60">
-              <div className="h-px bg-gradient-to-r from-transparent to-zinc-700 flex-1"></div>
-              <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Ou escolha manualmente</span>
-              <div className="h-px bg-gradient-to-l from-transparent to-zinc-700 flex-1"></div>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-10">
-                <div className="w-8 h-8 rounded-full border-2 border-zinc-800 border-t-amber-500 animate-spin mx-auto mb-3" />
-                <p className="text-zinc-500 text-sm">Carregando cardápio...</p>
-              </div>
-            ) : services.length === 0 ? (
-              <div className="text-center py-10 text-zinc-500 text-sm bg-zinc-900/30 rounded-2xl border border-zinc-800/50">
-                Nenhum serviço disponível para esta barbearia.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {services.map((svc) => (
-                  <button
-                    key={svc.id}
-                    onClick={() => handleSelecionarServico(svc)}
-                    className="w-full text-left bg-zinc-900/40 border border-zinc-800 hover:border-amber-500/40 hover:bg-zinc-800/50 rounded-2xl p-4 transition-all duration-300 active:scale-[0.99] group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0 pr-4">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Scissors size={14} className="text-amber-500/70" />
+        {/* CONTEÚDO DAS ABAS */}
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="w-8 h-8 border-2 border-zinc-800 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-zinc-500 text-sm">Carregando catálogo...</p>
+          </div>
+        ) : (
+          <div className="space-y-3 pb-6 animate-in fade-in duration-300">
+            
+            {/* ABA SERVIÇOS */}
+            {activeTab === 'services' && (
+              services.length === 0 ? (
+                <p className="text-center text-zinc-500 py-10 bg-[#0A0A0A] rounded-xl border border-dashed border-white/10">Nenhum serviço disponível no momento.</p>
+              ) : (
+                services.map((svc) => {
+                  const added = isInCart(svc.id, 'service');
+                  return (
+                    <div key={`svc-${svc.id}`} className={`bg-[#0A0A0A] border ${added ? 'border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'border-white/5'} rounded-xl p-4 transition-all duration-300`}>
+                      <div className="flex justify-between gap-4">
+                        <div className="flex-1">
                           <h3 className="font-bold text-sm text-zinc-100">{svc.name}</h3>
+                          <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{svc.description}</p>
+                          <div className="flex items-center gap-2 mt-3">
+                            <span className="text-[10px] text-zinc-400 font-medium bg-zinc-900 px-2 py-1 rounded-md flex items-center gap-1">
+                              <Clock size={10} /> {svc.duration_minutes} min
+                            </span>
+                            <span className="text-xs font-bold text-white">R$ {svc.price.toFixed(2)}</span>
+                          </div>
                         </div>
-                        <p className="text-xs text-zinc-500 line-clamp-2">{svc.description}</p>
-                        <div className="flex items-center gap-3 mt-3">
-                          <span className="text-[10px] text-zinc-400 font-medium bg-zinc-800/80 px-2 py-1 rounded-md flex items-center gap-1.5">
-                            <Clock size={10} />
-                            {svc.duration_minutes} min
-                          </span>
+                        <div className="flex flex-col justify-end">
+                          <button 
+                            onClick={() => toggleCartItem({ id: svc.id, type: 'service', name: svc.name, price: svc.price })}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                              added ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                            }`}
+                          >
+                            {added ? <Trash2 size={18} /> : <Plus size={18} />}
+                          </button>
                         </div>
-                      </div>
-                      <div className="text-right flex flex-col items-end justify-center h-full pt-1">
-                        <p className="text-[10px] text-zinc-500 mb-0.5 uppercase tracking-wide">A partir de</p>
-                        <p className="text-base font-bold text-white">R$ {svc.price.toFixed(2)}</p>
                       </div>
                     </div>
-                  </button>
-                ))}
-              </div>
+                  );
+                })
+              )
             )}
+
+            {/* ABA PRODUTOS */}
+            {activeTab === 'products' && (
+              products.length === 0 ? (
+                <p className="text-center text-zinc-500 py-10 bg-[#0A0A0A] rounded-xl border border-dashed border-white/10">Nenhum produto na loja no momento.</p>
+              ) : (
+                products.map((prod) => {
+                  const added = isInCart(prod.id, 'product');
+                  return (
+                    <div key={`prod-${prod.id}`} className={`bg-[#0A0A0A] border ${added ? 'border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'border-white/5'} rounded-xl p-4 transition-all duration-300 flex gap-4`}>
+                      <div className="w-20 h-20 rounded-lg bg-zinc-900 border border-white/5 shrink-0 overflow-hidden flex items-center justify-center">
+                        {prod.image_url ? (
+                          <img src={prod.image_url} alt={prod.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package size={24} className="text-zinc-700" />
+                        )}
+                      </div>
+                      <div className="flex-1 flex flex-col justify-between py-1">
+                        <div>
+                          <h3 className="font-bold text-sm text-zinc-100 line-clamp-1">{prod.name}</h3>
+                          {prod.description && <p className="text-xs text-zinc-500 line-clamp-1 mt-0.5">{prod.description}</p>}
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-sm font-bold text-white">R$ {prod.price.toFixed(2)}</span>
+                          <button 
+                            onClick={() => toggleCartItem({ id: prod.id, type: 'product', name: prod.name, price: prod.price })}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                              added ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20'
+                            }`}
+                          >
+                            {added ? 'Remover' : 'Adicionar'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )
+            )}
+
           </div>
         )}
+      </div>
 
-        {step === 'dados' && selectedService && (
-          <form onSubmit={handleContinuarDados} className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Scissors size={15} className="text-amber-500" />
-                  <span className="font-semibold text-sm">{selectedService.name}</span>
-                </div>
-                <span className="text-white font-bold">R$ {selectedService.price.toFixed(2)}</span>
-              </div>
+      {/* ==========================================
+          BOTÃO FLUTUANTE DO CARRINHO
+      ========================================== */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-40">
+        <button
+          onClick={() => cart.length > 0 && setIsCartOpen(true)}
+          disabled={cart.length === 0}
+          className={`w-full flex items-center justify-between p-4 rounded-xl shadow-2xl transition-all duration-300 ${
+            cart.length > 0 
+              ? 'bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-500 hover:to-sky-300 text-white border border-white/10 active:scale-[0.98]' 
+              : 'bg-[#121214] border border-white/5 text-zinc-500 cursor-not-allowed'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`relative flex items-center justify-center ${cart.length > 0 ? 'text-white' : 'text-zinc-600'}`}>
+              <ShoppingCart size={20} />
+              {cart.length > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-white text-blue-600 text-[10px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full">
+                  {cart.length}
+                </span>
+              )}
             </div>
+            <span className="font-bold text-sm tracking-wide">
+              {cart.length > 0 ? `Finalizar carrinho (${cart.length})` : 'Carrinho vazio'}
+            </span>
+          </div>
+          {cart.length > 0 && (
+            <span className="font-extrabold text-sm tracking-wider">
+              R$ {cartTotal.toFixed(2)}
+            </span>
+          )}
+        </button>
+      </div>
 
-            <div>
-              <label className="block text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5">
-                <User size={12} /> Seu Nome
-              </label>
-              <input
-                type="text"
-                required
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Como gosta de ser chamado?"
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5">
-                <Phone size={12} /> WhatsApp
-              </label>
-              <input
-                type="tel"
-                required
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
-                placeholder="(41) 99999-0000"
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 transition"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5">
-                  <CalendarDays size={12} /> Data
-                </label>
-                <select
-                  required
-                  value={data}
-                  onChange={(e) => setData(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-amber-500/50 transition"
-                >
-                  <option value="">Selecione</option>
-                  {gerarDatas().map((d) => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5">
-                  <Clock size={12} /> Horário
-                </label>
-                <select
-                  required
-                  value={hora}
-                  onChange={(e) => setHora(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-amber-500/50 transition"
-                >
-                  <option value="">Selecione</option>
-                  {gerarHorarios().map((h) => (
-                    <option key={h} value={h}>{h}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl transition-colors mt-4 active:scale-[0.99]"
-            >
-              Continuar
-            </button>
-          </form>
-        )}
-
-        {step === 'confirmacao' && selectedService && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-5">
-              <h2 className="text-lg font-bold text-center">Resumo do Agendamento</h2>
-
-              <div className="space-y-3.5">
-                <div className="flex justify-between items-center text-sm border-b border-zinc-800/50 pb-3">
-                  <span className="text-zinc-500">Serviço</span>
-                  <span className="font-medium text-right max-w-[60%]">{selectedService.name}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm border-b border-zinc-800/50 pb-3">
-                  <span className="text-zinc-500">Cliente</span>
-                  <span className="font-medium">{nome}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm border-b border-zinc-800/50 pb-3">
-                  <span className="text-zinc-500">Data e Hora</span>
-                  <span className="font-medium text-amber-400">
-                    {new Date(data + 'T12:00:00').toLocaleDateString('pt-BR')} às {hora}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-zinc-400 font-medium">Total a pagar</span>
-                  <span className="font-extrabold text-xl text-white">R$ {selectedService.price.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleVoltar}
-                className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900/50 py-4 text-sm font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all"
-              >
-                Voltar
+      {/* ==========================================
+          MODAL DO CARRINHO (CHECKOUT)
+      ========================================== */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          
+          <div className="bg-[#0A0A0A] w-full max-w-md h-full md:h-[90vh] md:mt-[5vh] md:rounded-3xl border border-white/10 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 overflow-hidden">
+            
+            {/* Header Modal */}
+            <div className="flex justify-between items-center p-5 border-b border-white/5 shrink-0 bg-[#0B0B0B]">
+              <h3 className="font-bold text-base flex items-center gap-2 text-white">
+                <ShoppingCart className="text-blue-500" size={18} /> Seu Pedido
+              </h3>
+              <button onClick={() => setIsCartOpen(false)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition">
+                <X size={18} />
               </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+              
+              {/* Resumo dos Itens */}
+              <div className="space-y-2 mb-8">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Itens Selecionados</h4>
+                <div className="bg-[#121214] border border-white/5 rounded-xl p-2 space-y-1">
+                  {cart.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-white/[0.02]">
+                      <div className="flex items-center gap-3">
+                        {item.type === 'service' ? <Scissors size={14} className="text-zinc-500"/> : <Package size={14} className="text-zinc-500"/>}
+                        <span className="text-sm font-medium text-zinc-200">{item.name}</span>
+                      </div>
+                      <span className="text-sm font-bold text-white">R$ {item.price.toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center p-3 border-t border-white/5 mt-2">
+                    <span className="text-sm font-bold text-zinc-400">Total</span>
+                    <span className="text-lg font-extrabold text-blue-400">R$ {cartTotal.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Formulário de Finalização */}
+              <form id="checkout-form" onSubmit={handleConfirmar} className="space-y-5">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Dados do Agendamento</h4>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Seu Nome</label>
+                    <div className="relative">
+                      <User size={16} className="absolute left-3.5 top-3.5 text-zinc-500" />
+                      <input type="text" required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Como gosta de ser chamado?" 
+                        className="w-full bg-[#121214] border border-white/5 rounded-xl pl-10 pr-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">WhatsApp</label>
+                    <div className="relative">
+                      <Phone size={16} className="absolute left-3.5 top-3.5 text-zinc-500" />
+                      <input type="tel" required value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(41) 99999-0000" 
+                        className="w-full bg-[#121214] border border-white/5 rounded-xl pl-10 pr-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Data</label>
+                      <div className="relative">
+                        <CalendarDays size={16} className="absolute left-3 top-3.5 text-zinc-500 pointer-events-none" />
+                        <select required value={data} onChange={(e) => setData(e.target.value)} 
+                          className="w-full bg-[#121214] border border-white/5 rounded-xl pl-9 pr-2 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition appearance-none cursor-pointer">
+                          <option value="">Selecione</option>
+                          {gerarDatas().map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Horário</label>
+                      <div className="relative">
+                        <Clock size={16} className="absolute left-3 top-3.5 text-zinc-500 pointer-events-none" />
+                        <select required value={hora} onChange={(e) => setHora(e.target.value)} 
+                          className="w-full bg-[#121214] border border-white/5 rounded-xl pl-9 pr-2 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition appearance-none cursor-pointer">
+                          <option value="">Selecione</option>
+                          {gerarHorarios().map((h) => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="p-5 border-t border-white/5 bg-[#0B0B0B] shrink-0">
               <button
-                onClick={handleConfirmar}
+                type="submit"
+                form="checkout-form"
                 disabled={enviando}
-                className="flex-[2] flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
               >
                 {enviando ? (
                   <>
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Confirmando...
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processando...
                   </>
                 ) : (
                   <>
-                    <CheckCircle size={18} />
-                    Confirmar Horário
+                    <Check size={20} /> Confirmar Reserva
                   </>
                 )}
               </button>
             </div>
+
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { API_BASE_URL } from '@/lib/api';
 import { 
   CalendarDays, Clock, Scissors, Phone, User, 
   CheckCircle, ArrowLeft, MessageCircle, ShoppingCart, 
-  Trash2, Plus, Check, Package
+  Trash2, Plus, Check, Package, X
 } from 'lucide-react';
 
 interface Service {

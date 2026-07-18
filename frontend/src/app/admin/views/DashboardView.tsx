@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  TrendingUp, Clock, AlertCircle, Scissors, Calendar, BarChart, Medal,
-  Check
+  TrendingUp, Clock, AlertCircle, Scissors, Calendar, BarChart, Medal
 } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
@@ -26,14 +25,6 @@ interface DashboardMetrics {
   pending_reviews: number;
 }
 
-interface CompanyPlan {
-  status: string;
-  trial_end: string | null;
-  subscription_end: string | null;
-  dias_restantes: number;
-  data_cadastro: string | null;
-}
-
 interface DashboardViewProps {
   token: string;
   onUnauthorized: () => void;
@@ -44,7 +35,6 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState(false);
-  const [companyPlan, setCompanyPlan] = useState<CompanyPlan | null>(null);
 
   const fetchDashboard = async () => {
     try {
@@ -59,7 +49,7 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
         return;
       }
 
-            if (response.status === 403) {
+      if (response.status === 403) {
         onSuspended();
         return;
       }
@@ -69,7 +59,7 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
       setMetrics(data);
     } catch {
       if (!metrics) {
-                setMetrics({
+        setMetrics({
           period: { start_date: '', end_date: '' },
           total_appointments: 0,
           completed_appointments: 0,
@@ -88,22 +78,8 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
     }
   };
 
-  const fetchCompanyPlan = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/admin/company`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCompanyPlan(data);
-      }
-    } catch {}
-  };
-
   useEffect(() => {
     fetchDashboard();
-    fetchCompanyPlan();
-
     const interval = setInterval(fetchDashboard, 10000);
     return () => clearInterval(interval);
   }, [token]);
@@ -120,7 +96,9 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto pb-10">
+      
+      {/* ALERTA DE ERRO DE SINCRONIZAÇÃO */}
       {dashboardError && (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -136,98 +114,63 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
         </div>
       )}
 
-      {/* PLAN CARD */}
-      {companyPlan && companyPlan.status !== 'suspended' && (
-        <div className="mb-6">
-          <div className={`rounded-2xl border px-5 py-4 flex items-center justify-between gap-4 ${
-            companyPlan.status === 'trial'
-              ? 'bg-amber-500/10 border-amber-500/20'
-              : 'bg-sky-400/10 border-sky-400/20'
-          }`}>
-            <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                companyPlan.status === 'trial'
-                  ? 'bg-amber-500/20 text-amber-400'
-                  : 'bg-sky-400/20 text-sky-400'
-              }`}>
-                {companyPlan.status === 'trial' ? <Clock size={20} /> : <Check size={20} />}
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white">
-                  {companyPlan.status === 'trial'
-                    ? `Plano Pro — ${companyPlan.dias_restantes} dia${companyPlan.dias_restantes !== 1 ? 's' : ''} restante${companyPlan.dias_restantes !== 1 ? 's' : ''}`
-                    : 'Plano Ativo'}
-                </p>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  {companyPlan.status === 'trial'
-                    ? `Expira em ${new Date(companyPlan.trial_end!).toLocaleDateString('pt-BR')}`
-                    : `Válido até ${new Date(companyPlan.subscription_end!).toLocaleDateString('pt-BR')}`}
-                </p>
-              </div>
-            </div>
-            {companyPlan.status === 'trial' && companyPlan.dias_restantes <= 3 && (
-              <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-3 py-1.5 rounded-lg shrink-0">
-                ⚠️ Próximo do fim
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* METRICS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-8">
-        <div className="xl:col-span-2 bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 blur-[60px] -mr-10 -mt-10 transition-all group-hover:bg-amber-500/20"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-8 mt-2">
+        
+        {/* Card Faturamento */}
+        <div className="xl:col-span-2 bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-between shadow-lg">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 blur-[60px] -mr-10 -mt-10 transition-all group-hover:bg-emerald-500/20"></div>
           <div className="flex items-center justify-between mb-2 relative z-10">
             <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest flex items-center gap-1">
-              Faturamento <span className="text-amber-500">»</span>
+              Faturamento <span className="text-emerald-500">»</span>
             </p>
-            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-              <TrendingUp size={14} className="text-amber-400" />
+            <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+              <TrendingUp size={14} className="text-emerald-400" />
             </div>
           </div>
           <div className="relative z-10">
             <h3 className="text-3xl font-extrabold text-white mb-1">R$ {metrics.revenue.toFixed(2)}</h3>
-            <p className="text-xs text-sky-400 font-medium">+</p>
+            <p className="text-xs text-zinc-500 font-medium">Líquido do período selecionado</p>
           </div>
+          {/* Gráfico decorativo */}
           <div className="mt-6 h-20 w-full relative z-10">
             <svg viewBox="0 0 200 60" className="w-full h-full overflow-visible" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity="1" />
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="1" />
                 </linearGradient>
                 <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <polygon points="0,60 0,40 33,25 66,35 100,15 133,25 166,5 200,10 200,60" fill="url(#areaGrad)" />
               <polyline fill="none" stroke="url(#lineGrad)" strokeWidth="3" points="0,40 33,25 66,35 100,15 133,25 166,5 200,10" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="0" cy="40" r="3" fill="#121214" stroke="#f59e0b" strokeWidth="2" />
-              <circle cx="33" cy="25" r="3" fill="#121214" stroke="#f59e0b" strokeWidth="2" />
-              <circle cx="66" cy="35" r="3" fill="#121214" stroke="#f59e0b" strokeWidth="2" />
-              <circle cx="100" cy="15" r="3" fill="#121214" stroke="#f59e0b" strokeWidth="2" />
-              <circle cx="133" cy="25" r="3" fill="#121214" stroke="#f59e0b" strokeWidth="2" />
-              <circle cx="166" cy="5" r="3" fill="#121214" stroke="#f59e0b" strokeWidth="2" />
-              <circle cx="200" cy="10" r="3" fill="#121214" stroke="#f59e0b" strokeWidth="2" />
+              <circle cx="0" cy="40" r="3" fill="#121214" stroke="#10b981" strokeWidth="2" />
+              <circle cx="33" cy="25" r="3" fill="#121214" stroke="#10b981" strokeWidth="2" />
+              <circle cx="66" cy="35" r="3" fill="#121214" stroke="#10b981" strokeWidth="2" />
+              <circle cx="100" cy="15" r="3" fill="#121214" stroke="#10b981" strokeWidth="2" />
+              <circle cx="133" cy="25" r="3" fill="#121214" stroke="#10b981" strokeWidth="2" />
+              <circle cx="166" cy="5" r="3" fill="#121214" stroke="#10b981" strokeWidth="2" />
+              <circle cx="200" cy="10" r="3" fill="#121214" stroke="#10b981" strokeWidth="2" />
             </svg>
           </div>
         </div>
 
-        <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-center">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 blur-[50px] -mr-10 -mt-10 transition-all group-hover:bg-sky-400/20"></div>
+        <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-center shadow-lg">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[50px] -mr-10 -mt-10 transition-all group-hover:bg-blue-500/20"></div>
           <div className="flex items-center justify-between mb-4">
             <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest">Atendimentos</p>
-            <div className="w-8 h-8 rounded-full bg-sky-400/10 flex items-center justify-center border border-sky-400/20">
-              <Scissors size={14} className="text-sky-400" />
+            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+              <Scissors size={14} className="text-blue-400" />
             </div>
           </div>
           <h3 className="text-3xl font-extrabold text-white mb-1">{metrics.completed_appointments}</h3>
-          <p className="text-xs text-sky-400 font-medium">Serviços finalizados</p>
+          <p className="text-xs text-zinc-500 font-medium">Serviços finalizados</p>
         </div>
 
-        <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-center">
+        <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-center shadow-lg">
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[50px] -mr-10 -mt-10 transition-all group-hover:bg-amber-500/20"></div>
           <div className="flex items-center justify-between mb-4">
             <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest">Pendentes</p>
@@ -236,27 +179,27 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
             </div>
           </div>
           <h3 className="text-3xl font-extrabold text-white mb-1">{metrics.pending_appointments}</h3>
-          <p className="text-xs text-amber-400 font-medium">Aguardando ação</p>
+          <p className="text-xs text-zinc-500 font-medium">Aguardando ação</p>
         </div>
 
-        <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-center">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[50px] -mr-10 -mt-10 transition-all group-hover:bg-blue-500/20"></div>
+        <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-center shadow-lg">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-[50px] -mr-10 -mt-10 transition-all group-hover:bg-indigo-500/20"></div>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest">Agendamentos</p>
-            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-              <Calendar size={14} className="text-sky-400" />
+            <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest">Reservas</p>
+            <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+              <Calendar size={14} className="text-indigo-400" />
             </div>
           </div>
           <h3 className="text-3xl font-extrabold text-white mb-1">{metrics.total_appointments}</h3>
-          <p className="text-xs text-sky-400 font-medium">Volume do período</p>
+          <p className="text-xs text-zinc-500 font-medium">Volume total do período</p>
         </div>
       </div>
 
       {/* TOP SERVICES + OVERVIEW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-[#121214] border border-white/[0.05] rounded-3xl p-6">
+        <div className="lg:col-span-2 bg-[#121214] border border-white/[0.05] rounded-3xl p-6 shadow-lg">
           <h3 className="text-white text-base font-bold mb-6 flex items-center gap-2">
-            <Medal size={18} className="text-sky-400" />
+            <Medal size={18} className="text-blue-500" />
             Serviços Mais Procurados
           </h3>
           {metrics.top_services && metrics.top_services.length > 0 ? (
@@ -267,7 +210,7 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
                     <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold border
                       ${idx === 0 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
                         idx === 1 ? 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20' : 
-                        'bg-blue-500/10 text-sky-400 border-blue-500/20'}`}>
+                        'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
                       #{idx + 1}
                     </span>
                     <div>
@@ -285,13 +228,13 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
           ) : (
             <div className="flex flex-col items-center justify-center py-10 text-zinc-500">
               <BarChart size={32} className="mb-3 opacity-20" />
-              <p className="text-sm">Sem dados suficientes.</p>
+              <p className="text-sm">Sem dados suficientes no período.</p>
             </div>
           )}
         </div>
 
-        <div className="bg-gradient-to-b from-blue-600/10 to-[#121214] border border-blue-500/20 rounded-3xl p-6 relative overflow-hidden">
-          <h3 className="text-sky-300 text-sm font-bold uppercase tracking-widest mb-6">Visão Geral</h3>
+        <div className="bg-gradient-to-b from-blue-600/10 to-[#121214] border border-blue-500/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
+          <h3 className="text-blue-400 text-sm font-bold uppercase tracking-widest mb-6">Visão Geral</h3>
           <div className="space-y-6">
             <div>
               <p className="text-zinc-400 text-xs mb-1">Período de Análise</p>

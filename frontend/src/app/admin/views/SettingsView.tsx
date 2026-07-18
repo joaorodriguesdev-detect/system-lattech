@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { Settings, Image as ImageIcon, ShieldAlert, Clock, Check, Ban, MapPin, Trash2, Upload, Phone } from 'lucide-react';
+import { Settings, Image as ImageIcon, MapPin, Phone, CreditCard, CheckCircle, Clock } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 export default function SettingsView({ token }: { token: string }) {
@@ -13,16 +13,11 @@ export default function SettingsView({ token }: { token: string }) {
   const [companyPlan, setCompanyPlan] = useState<any>(null);
   const [loadingPlan, setLoadingPlan] = useState(true);
 
-  // 🔥 NOVOS ESTADOS PARA O MAPA E WHATSAPP
+  // Estados de Mapa e WhatsApp
   const [address, setAddress] = useState('');
   const [mapUrl, setMapUrl] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [savingLocation, setSavingLocation] = useState(false);
-
-  // 🔥 ESTADOS PARA BANNERS
-  const [banners, setBanners] = useState<any[]>([]);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
-  const [deletingBannerId, setDeletingBannerId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchCompanyPlan = async () => {
@@ -33,6 +28,8 @@ export default function SettingsView({ token }: { token: string }) {
         
         if (res.ok) {
           const data = await res.json();
+          
+          // Calcula dias restantes se o backend não enviou
           let dias = data.dias_restantes;
           if (dias === undefined || dias === null) {
             const targetDate = data.status === 'trial' ? data.trial_end : data.subscription_end;
@@ -51,84 +48,13 @@ export default function SettingsView({ token }: { token: string }) {
 
         }
       } catch (err) {
-        console.error("Erro crítico ao buscar plano", err);
+        console.error("Erro ao buscar configurações", err);
       } finally {
         setLoadingPlan(false);
       }
     };
     fetchCompanyPlan();
-    fetchBanners();
   }, [token]);
-
-  const fetchBanners = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/admin/company/banners`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setBanners(data);
-      }
-    } catch (err) {
-      console.error('Erro ao buscar banners', err);
-    }
-  };
-
-  const handleBannerUpload = async (order: number) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-
-      setUploadingBanner(true);
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/admin/company/banners`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        });
-
-        if (res.ok) {
-          await fetchBanners();
-        } else {
-          const err = await res.json();
-          alert(err.detail || 'Erro ao fazer upload do banner.');
-        }
-      } catch {
-        alert('Erro de conexão ao enviar banner.');
-      } finally {
-        setUploadingBanner(false);
-      }
-    };
-    input.click();
-  };
-
-  const handleBannerDelete = async (banner: any) => {
-    if (!confirm('Remover este banner?')) return;
-
-    setDeletingBannerId(banner.id);
-    try {
-      const res = await fetch(`${API_BASE_URL}/admin/company/banners/${banner.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        await fetchBanners();
-      } else {
-        alert('Erro ao remover banner.');
-      }
-    } catch {
-      alert('Erro de conexão ao remover banner.');
-    } finally {
-      setDeletingBannerId(null);
-    }
-  };
 
   const handleLogoUpload = async (e: FormEvent) => {
     e.preventDefault();
@@ -153,7 +79,7 @@ export default function SettingsView({ token }: { token: string }) {
       } else {
         alert(`Erro ao atualizar logo`);
       }
-    } catch { alert('Erro crítico ao subir logo.'); } 
+    } catch { alert('Erro de conexão ao enviar logo.'); } 
     finally { setUploadingLogo(false); }
   };
 
@@ -170,7 +96,7 @@ export default function SettingsView({ token }: { token: string }) {
         body: JSON.stringify({ address: address, map_url: mapUrl, whatsapp_number: whatsappNumber }),
       });
       if (res.ok) {
-        alert('Configurações salvas com sucesso!');
+        alert('Configurações de contato salvas com sucesso!');
       } else {
         alert('Erro ao salvar dados.');
       }
@@ -179,142 +105,158 @@ export default function SettingsView({ token }: { token: string }) {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 md:p-8 max-w-3xl mx-auto">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto pb-20 space-y-6">
+      
+      {/* HEADER DA TELA */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-white text-2xl font-bold tracking-tight">Configurações</h2>
+          <p className="text-zinc-500 text-sm">Personalize os dados públicos da sua barbearia e gerencie sua assinatura.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <div className="mb-8 border-b border-white/5 pb-6">
-          <h2 className="text-white text-xl font-bold flex items-center gap-2">
-            <Settings size={22} className="text-sky-400" /> Configurações da Barbearia
-          </h2>
+        {/* COLUNA ESQUERDA (Dados da Barbearia) */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* LOGO FORM */}
+          <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 md:p-8">
+            <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
+              <ImageIcon size={18} className="text-blue-500"/> Identidade Visual
+            </h3>
+            <form onSubmit={handleLogoUpload} className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+              <div className="w-24 h-24 shrink-0 rounded-2xl border border-white/10 flex items-center justify-center bg-[#0A0A0A] overflow-hidden">
+                {logoPreview ? (
+                  <img src={logoPreview} className="w-full h-full object-cover" />
+                ) : currentLogo ? (
+                  <img src={currentLogo} className="w-full h-full object-contain p-2" />
+                ) : (
+                  <span className="text-xs text-zinc-600 font-medium">Sem Logo</span>
+                )}
+              </div>
+              <div className="flex-1 w-full space-y-4">
+                <input type="file" accept="image/*" onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setLogoFile(file);
+                  if (file) setLogoPreview(URL.createObjectURL(file));
+                  else setLogoPreview('');
+                }} className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-500/10 file:text-blue-400 hover:file:bg-blue-500/20 file:transition-colors cursor-pointer" />
+                <button disabled={uploadingLogo || !logoFile} type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                  {uploadingLogo ? 'Enviando...' : 'Atualizar Logo'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* LOCALIZAÇÃO E CONTATO FORM */}
+          <div className="bg-[#121214] border border-white/[0.05] rounded-3xl p-6 md:p-8">
+            <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
+              <MapPin size={18} className="text-emerald-500"/> Localização e Contato
+            </h3>
+            <form onSubmit={handleSaveLocation} className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-1.5">
+                  <Phone size={14} className="text-zinc-400" /> WhatsApp da Barbearia
+                </label>
+                <input type="text" value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} placeholder="Ex: 5541999999999" className="w-full bg-[#0A0A0A] border border-white/5 rounded-xl px-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
+                <p className="text-xs text-zinc-500 mt-2">Os agendamentos do aplicativo serão enviados para este número.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2 mt-4">Endereço Completo</label>
+                <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Ex: Rua das Flores, 100 - Centro" className="w-full bg-[#0A0A0A] border border-white/5 rounded-xl px-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2 mt-4">Link do Mapa (Iframe src)</label>
+                <input type="text" value={mapUrl} onChange={e => setMapUrl(e.target.value)} placeholder="URL do Google Maps" className="w-full bg-[#0A0A0A] border border-white/5 rounded-xl px-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
+              </div>
+              <div className="pt-2">
+                <button disabled={savingLocation} type="submit" className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold px-8 py-3 rounded-xl disabled:opacity-50 transition-colors">
+                  {savingLocation ? 'Salvando...' : 'Salvar Informações'}
+                </button>
+              </div>
+            </form>
+          </div>
+
         </div>
 
-        {/* --- FORMULÁRIO DE LOGO --- */}
-        <form onSubmit={handleLogoUpload} className="space-y-8 mb-10">
-            <div>
-              <h3 className="text-sm font-bold text-zinc-300 mb-4 flex items-center gap-2">
-                <ImageIcon size={16} className="text-sky-400"/> Logo da Empresa
-              </h3>
-              <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-6 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                <div className="flex flex-col items-center gap-3">
-                  <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Logo Atual</p>
-                  <div className="w-32 h-32 shrink-0 rounded-2xl border border-white/10 flex items-center justify-center bg-[#050505] overflow-hidden">
-                    {currentLogo ? <img src={currentLogo} className="w-full h-full object-contain p-2" /> : <p className="text-[10px] text-zinc-600">Sem Logo</p>}
+        {/* COLUNA DIREITA (Assinatura e Plano) */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-gradient-to-b from-[#121214] to-[#0A0A0A] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden h-full flex flex-col">
+            
+            {/* Decoração de fundo */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[40px] -mr-10 -mt-10 pointer-events-none"></div>
+
+            <div className="flex items-center gap-2 mb-6">
+              <CreditCard size={18} className="text-blue-500" />
+              <h3 className="text-sm font-bold text-white">Assinatura LAT</h3>
+            </div>
+
+            {loadingPlan ? (
+              <div className="flex-1 flex items-center justify-center py-10">
+                <div className="w-6 h-6 border-2 border-zinc-800 border-t-blue-500 rounded-full animate-spin"></div>
+              </div>
+            ) : companyPlan ? (
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="space-y-6">
+                  
+                  <div>
+                    <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mb-1">Status Atual</p>
+                    <div className="flex items-center gap-2">
+                      {companyPlan.status === 'trial' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold rounded-lg uppercase tracking-wider">
+                          <Clock size={12} /> Avaliação
+                        </span>
+                      ) : companyPlan.status === 'active' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold rounded-lg uppercase tracking-wider">
+                          <CheckCircle size={12} /> Ativo
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs font-bold rounded-lg uppercase tracking-wider">
+                          <Ban size={12} /> Suspenso
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  <div>
+                    <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mb-1">Validade do Acesso</p>
+                    <p className="text-white text-base font-semibold">
+                      {companyPlan.dias_restantes > 0 ? (
+                        <>Restam <span className="text-blue-400">{companyPlan.dias_restantes}</span> dias</>
+                      ) : (
+                        <span className="text-rose-400">Plano expirado</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Data limite: {companyPlan.status === 'trial' 
+                        ? (companyPlan.trial_end ? new Date(companyPlan.trial_end).toLocaleDateString('pt-BR') : '--') 
+                        : (companyPlan.subscription_end ? new Date(companyPlan.subscription_end).toLocaleDateString('pt-BR') : '--')}
+                    </p>
+                  </div>
+
                 </div>
-                <div className="flex-1 w-full space-y-4">
-                  <input type="file" accept="image/*" onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setLogoFile(file);
-                    if (file) setLogoPreview(URL.createObjectURL(file));
-                    else setLogoPreview('');
-                  }} className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-500/10 file:text-sky-400" />
-                  <button disabled={uploadingLogo || !logoFile} type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-2.5 rounded-xl disabled:opacity-50">
-                    {uploadingLogo ? 'Enviando...' : 'Atualizar Logo'}
+
+                {/* Botão de Fatura / Atualização (Futuro) */}
+                <div className="mt-8 pt-6 border-t border-white/5">
+                  <p className="text-[10px] text-zinc-500 text-center uppercase tracking-widest font-medium mb-3">
+                    Gerenciamento Financeiro
+                  </p>
+                  <button className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 font-semibold rounded-xl text-sm transition-colors"
+                    onClick={() => alert("Módulo de pagamentos Asaas será ativado em breve.")}
+                  >
+                    Gerenciar Assinatura
                   </button>
                 </div>
               </div>
-            </div>
-        </form>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">
+                Não foi possível carregar os dados.
+              </div>
+            )}
 
-        {/* --- SEÇÃO DE BANNERS DA VITRINE --- */}
-        <div className="mb-10 border-t border-white/5 pt-8">
-          <h3 className="text-sm font-bold text-zinc-300 mb-4 flex items-center gap-2">
-            <ImageIcon size={16} className="text-amber-400" /> Banners da Vitrine (Máx: 5)
-          </h3>
-          <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {[1, 2, 3, 4, 5].map((slot) => {
-                const banner = banners.find((b: any) => b.order === slot);
-
-                if (banner) {
-                  return (
-                    <div
-                      key={banner.id}
-                      className="relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 group"
-                    >
-                      <img
-                        src={banner.image_url}
-                        alt={`Banner ${slot}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
-                        <button
-                          onClick={() => handleBannerDelete(banner)}
-                          disabled={deletingBannerId === banner.id}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-xl disabled:opacity-50"
-                          title="Remover banner"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                      <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-                        {slot}/5
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={`empty-${slot}`}
-                    className="relative aspect-[4/3] rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-2 hover:border-blue-500/50 transition-colors group cursor-pointer"
-                    onClick={() => !uploadingBanner && handleBannerUpload(slot)}
-                  >
-                    {uploadingBanner ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-[10px] text-zinc-500">Enviando...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload size={22} className="text-zinc-600 group-hover:text-sky-400 transition-colors" />
-                        <span className="text-[10px] text-zinc-600 group-hover:text-zinc-400 transition-colors">
-                          Upload
-                        </span>
-                      </>
-                    )}
-                    <div className="absolute top-2 left-2 bg-black/40 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-                      {slot}/5
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-[11px] text-zinc-600 mt-4 text-center">
-              Clique em um slot vazio para fazer upload. Passe o mouse sobre a imagem para removê-la.
-            </p>
           </div>
         </div>
-
-        {/* 🔥 NOVO FORMULÁRIO DE CONTATO E MAPA 🔥 */}
-        <form onSubmit={handleSaveLocation} className="space-y-4 mb-10 border-t border-white/5 pt-8">
-          <h3 className="text-sm font-bold text-zinc-300 mb-4 flex items-center gap-2">
-            <MapPin size={16} className="text-blue-400"/> Localização e Contato
-          </h3>
-          <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-6 space-y-4">
-            <div>
-              <label className="block text-xs text-zinc-400 font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                <Phone size={14} className="text-green-500" /> WhatsApp da Barbearia
-              </label>
-              <input type="text" value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} placeholder="Ex: 5541999999999" className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
-              <p className="text-xs text-zinc-500 mt-2">Os agendamentos do site serão enviados para este número (adicione apenas números com DDD e DDI 55).</p>
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-400 font-semibold uppercase tracking-widest mb-2 mt-6">Endereço Escrito</label>
-              <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Ex: Rua XV de Novembro, 1000 - Centro" className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-400 font-semibold uppercase tracking-widest mb-2">Link do Iframe do Google Maps (src)</label>
-              <input type="text" value={mapUrl} onChange={e => setMapUrl(e.target.value)} placeholder="Cole apenas o link que fica dentro do src='...'" className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
-              <p className="text-xs text-zinc-500 mt-2">Vá no Google Maps &gt; Compartilhar &gt; Incorporar Mapa &gt; Copie apenas a URL que está dentro das aspas do <b>src</b>.</p>
-            </div>
-            <div className="flex justify-end pt-4">
-              <button disabled={savingLocation} type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-2.5 rounded-xl disabled:opacity-50">
-                {savingLocation ? 'Salvando...' : 'Salvar Dados'}
-              </button>
-            </div>
-          </div>
-        </form>
 
       </div>
     </div>

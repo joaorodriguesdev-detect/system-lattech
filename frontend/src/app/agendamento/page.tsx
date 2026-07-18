@@ -217,8 +217,10 @@ export default function AgendamentoPage() {
         
         msg += `\n💰 *Total a pagar:* R$ ${cartTotal.toFixed(2)}\n\n✅ Aguardando aprovação no painel!`;
 
-        const numDestino = companyPhone || '5541995707907'; 
+        // 🔥 CORREÇÃO: Usando estritamente o número cadastrado da empresa. Sem o seu número como fallback!
+        const numDestino = companyPhone ? companyPhone : ''; 
         setWhatsappLink(`https://wa.me/${numDestino}?text=${encodeURIComponent(msg)}`);
+        
         setSucesso(true);
         setIsCartOpen(false);
       } else {

@@ -1,242 +1,554 @@
 'use client';
-
-import { useState, useEffect } from 'react';
-import { Check, Clock, Ban, Calendar, Scissors, Package, Info } from 'lucide-react';
+import { useEffect, useState, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
+import { 
+  CalendarDays, Clock, Scissors, Phone, User, 
+  CheckCircle, ArrowLeft, MessageCircle, ShoppingCart, 
+  Trash2, Plus, Check, Package, X
+} from 'lucide-react';
 
-interface AgendamentosViewProps {
-  token: string;
-  team: any[];
-  servicesMap: Record<number, { name: string; price: number }>;
+interface Service {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  duration_minutes: number;
 }
 
-export default function AgendamentosView({ token, team, servicesMap }: AgendamentosViewProps) {
-  const [allAppointments, setAllAppointments] = useState<any[]>([]);
-  const [loadingAllAppointments, setLoadingAllAppointments] = useState(true);
-  const [appointmentFilter, setAppointmentFilter] = useState<'todos' | 'mes'>('mes');
-  const [processingId, setProcessingId] = useState<number | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
+interface Product {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  active: boolean;
+}
+
+interface CartItem {
+  id: number;
+  type: 'service' | 'product';
+  name: string;
+  price: number;
+}
+
+export default function AgendamentoPage() {
+  const router = useRouter();
+  
+  // ==========================================
+  // ESTADOS DE DADOS
+  // ==========================================
+  const [services, setServices] = useState<Service[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
+  
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [companyPhone, setCompanyPhone] = useState<string>(''); 
+  const [companyName, setCompanyName] = useState<string>('');
+
+  // ==========================================
+  // ESTADOS DO CARRINHO E CHECKOUT
+  // ==========================================
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [data, setData] = useState('');
+  const [hora, setHora] = useState('');
+
+  const [enviando, setEnviando] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
+  const [whatsappLink, setWhatsappLink] = useState('');
+
+  // ==========================================
+  // INICIALIZAÇÃO (Lógica de Subdomínio)
+  // ==========================================
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    let sub = 'mariobarber'; 
+    
+    if (hostname.includes('lvh.me')) {
+      sub = hostname.replace('.lvh.me', '');
+    } else if (hostname !== 'localhost' && hostname.includes('.')) {
+      sub = hostname.split('.')[0];
+    }
+
+    fetch(`${API_BASE_URL}/system/companies/lookup?subdomain=${sub}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Empresa não encontrada");
+        return res.json();
+      })
+      .then(data => {
+        setCompanyId(data.id); 
+        if (data.name) setCompanyName(data.name);
+        if (data.whatsapp_number) {
+            setCompanyPhone(data.whatsapp_number.replace(/\D/g, ''));
+        }
+      })
+      .catch(err => {
+        console.error("Erro ao descobrir empresa:", err);
+        setLoading(false);
+      });
+  }, []);
 
   useEffect(() => {
-    const fetchAllAppointments = async () => {
-      setLoadingAllAppointments(true);
-      try {
-        const res = await fetch(`${API_BASE_URL}/appointments`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setAllAppointments(Array.isArray(data) ? data : []);
-        }
-      } catch (e) {
-        console.error("Erro ao buscar agendamentos", e);
-      } finally {
-        setLoadingAllAppointments(false);
-      }
-    };
-    fetchAllAppointments();
-  }, [token]);
+    if (companyId === null) return; 
 
-  const handleAssignBarber = async (appId: number, barberId: number) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/admin/appointments/${appId}/assign`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ barber_id: barberId })
-      });
-      if (res.ok) {
-        setAllAppointments(prev => prev.map(a => a.id === appId ? { ...a, barber_id: barberId } : a));
-      }
-    } catch {
-      alert("Erro ao transferir agendamento");
-    }
-  };
-
-  const handleChangeStatus = async (appointmentId: number, newStatus: 'completed' | 'canceled') => {
-    setProcessingId(appointmentId);
-    try {
-      const response = await fetch(`${API_BASE_URL}/appointments/${appointmentId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (response.ok) {
-        setAllAppointments((prev) => prev.map(a => a.id === appointmentId ? { ...a, status: newStatus } : a));
-      } else {
-        alert('Erro ao atualizar status');
-      }
-    } catch {
-      alert('Erro de conexão ao atualizar status');
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const filteredAppointments = allAppointments.filter((a) => {
-    if (appointmentFilter === 'mes') {
-      return a.appointment_date.startsWith(selectedMonth);
-    }
-    return true;
-  });
-
-  // Função para extrair detalhes do carrinho a partir das anotações (campo 'notes')
-  const extractCartDetails = (notes: string | null) => {
-    if (!notes) return { name: "Cliente", extras: null, products: null };
+    setLoading(true);
     
-    // Antigo padrão (Cliente: Nome - Tel: Numero)
-    const oldNameMatch = notes.match(/Cliente:\s*(.*?)(?:\s*-\s*Tel:|$)/);
-    let name = oldNameMatch ? oldNameMatch[1].trim() : "Cliente";
+    // Busca Serviços
+    const fetchServices = fetch(`${API_BASE_URL}/services/?company_id=${companyId}`)
+      .then(res => res.ok ? res.json() : []);
+      
+    // Busca Produtos
+    const fetchProducts = fetch(`${API_BASE_URL}/products/?company_id=${companyId}`)
+      .then(res => res.ok ? res.json() : []);
 
-    // Novo padrão (Carrinho não envia o nome nas notas, então pegamos apenas extras e produtos)
-    let extras = null;
-    let products = null;
+    Promise.all([fetchServices, fetchProducts])
+      .then(([servicesData, productsData]) => {
+        setServices(Array.isArray(servicesData) ? servicesData : []);
+        setProducts(Array.isArray(productsData) ? productsData.filter((p: Product) => p.active) : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [companyId]);
 
-    const extrasMatch = notes.match(/Serviços extras:\s*(.*?)\./);
-    if (extrasMatch) extras = extrasMatch[1].trim();
-
-    const productsMatch = notes.match(/Produtos reservados:\s*(.*?)\./);
-    if (productsMatch) products = productsMatch[1].trim();
-
-    return { name, extras, products };
+  // ==========================================
+  // FUNÇÕES AUXILIARES
+  // ==========================================
+  const gerarDatas = () => {
+    const datas: { value: string; label: string }[] = [];
+    const hoje = new Date();
+    for (let i = 1; i <= 14; i++) {
+      const d = new Date(hoje);
+      d.setDate(d.getDate() + i);
+      if (d.getDay() !== 0) {
+        const value = d.toISOString().split('T')[0];
+        const label = d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+        datas.push({ value, label });
+      }
+    }
+    return datas;
   };
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-20">
-      
-      {/* Header Premium */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-white text-2xl font-bold tracking-tight">Agendamentos</h2>
-          <p className="text-zinc-500 text-sm">Gerencie os agendamentos e o carrinho dos clientes.</p>
-        </div>
+  const gerarHorarios = () => {
+    const horarios: string[] = [];
+    for (let h = 8; h <= 17; h++) {
+      horarios.push(`${String(h).padStart(2, '0')}:00`);
+      if (h < 17) horarios.push(`${String(h).padStart(2, '0')}:30`);
+    }
+    return horarios;
+  };
+
+  const toggleCartItem = (item: CartItem) => {
+    setCart(prev => {
+      const exists = prev.find(i => i.id === item.id && i.type === item.type);
+      if (exists) {
+        return prev.filter(i => !(i.id === item.id && i.type === item.type));
+      }
+      return [...prev, item];
+    });
+  };
+
+  const isInCart = (id: number, type: 'service' | 'product') => {
+    return cart.some(i => i.id === id && i.type === type);
+  };
+
+  const cartTotal = cart.reduce((acc, item) => acc + item.price, 0);
+
+  // ==========================================
+  // SUBMISSÃO DO AGENDAMENTO (CARRINHO)
+  // ==========================================
+  const handleConfirmar = async (e: FormEvent) => {
+    e.preventDefault();
+    
+    if (!nome.trim() || !telefone.trim() || !data || !hora) {
+      alert('Preencha todos os campos obrigatórios (Nome, WhatsApp, Data e Hora).');
+      return;
+    }
+
+    const cartServices = cart.filter(i => i.type === 'service');
+    const cartProducts = cart.filter(i => i.type === 'product');
+
+    if (cartServices.length === 0) {
+      alert('Seu carrinho precisa ter pelo menos 1 serviço para podermos agendar um horário.');
+      return;
+    }
+
+    setEnviando(true);
+    const appointmentDate = new Date(`${data}T${hora}:00`);
+    
+    // Constrói as anotações detalhadas para o banco de dados
+    let notesText = `Agendamento via app (Carrinho).`;
+    if (cartServices.length > 1) {
+      notesText += `\nServiços extras: ${cartServices.slice(1).map(s => s.name).join(', ')}.`;
+    }
+    if (cartProducts.length > 0) {
+      notesText += `\nProdutos reservados: ${cartProducts.map(p => p.name).join(', ')}.`;
+    }
+
+    try {
+      // API exige um service_id. Mandamos o primeiro do carrinho.
+      const res = await fetch(`${API_BASE_URL}/appointments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_id: companyId,
+          service_id: cartServices[0].id, 
+          appointment_date: appointmentDate.toISOString(),
+          customer_name: nome,
+          customer_phone: telefone,
+          notes: notesText,
+        }),
+      });
+
+      if (res.ok) {
+        const dataFormatada = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR');
         
-        <div className="flex items-center gap-2 bg-[#0B0B0B] p-1 rounded-xl border border-white/5">
-          {['mes', 'todos'].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setAppointmentFilter(filter as any)}
-              className={`text-xs px-4 py-2 rounded-lg font-medium transition-all ${
-                appointmentFilter === filter ? 'bg-white text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              {filter === 'mes' ? 'Este Mês' : 'Todos'}
-            </button>
-          ))}
+        let msg = `🪒 *Novo Agendamento!*\n\n👤 *Cliente:* ${nome}\n📞 *Tel:* ${telefone}\n📅 *Data:* ${dataFormatada}\n⏰ *Horário:* ${hora}\n\n`;
+        
+        msg += `🛒 *Itens do Carrinho:*\n`;
+        cartServices.forEach(s => msg += `✂️ ${s.name} - R$ ${s.price.toFixed(2)}\n`);
+        cartProducts.forEach(p => msg += `🛍️ ${p.name} - R$ ${p.price.toFixed(2)}\n`);
+        
+        msg += `\n💰 *Total a pagar:* R$ ${cartTotal.toFixed(2)}\n\n✅ Aguardando aprovação no painel!`;
+
+        const numDestino = companyPhone || '5541995707907'; 
+        setWhatsappLink(`https://wa.me/${numDestino}?text=${encodeURIComponent(msg)}`);
+        setSucesso(true);
+        setIsCartOpen(false);
+      } else {
+        const err = await res.json();
+        alert("Erro retornado pelo servidor: " + JSON.stringify(err.detail || err, null, 2));
+      }
+    } catch {
+      alert('Erro de conexão com o servidor. Verifique se o backend está rodando.');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  // ==========================================
+  // TELA DE SUCESSO
+  // ==========================================
+  if (sucesso) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-6">
+        <div className="text-center space-y-6 max-w-sm w-full">
+          <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto border border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.2)]">
+            <CheckCircle size={40} className="text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Reserva Concluída!</h1>
+            <p className="text-zinc-400 text-sm mt-2">Seu pedido foi registrado e enviado para a barbearia.</p>
+          </div>
+
+          <a
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-500 hover:to-sky-300 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20 border border-white/10"
+          >
+            <MessageCircle size={20} />
+            Avisar Barbeiro no WhatsApp
+          </a>
+
+          <button
+            onClick={() => router.push('/')}
+            className="w-full py-4 bg-[#121214] border border-white/5 text-zinc-300 hover:text-white hover:bg-[#18181b] rounded-xl text-sm font-bold transition"
+          >
+            Voltar para Home
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {appointmentFilter === 'mes' && (
-        <div className="flex justify-end animate-in fade-in duration-300">
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-[#0B0B0B] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition cursor-pointer"
-          />
+  // ==========================================
+  // TELA PRINCIPAL (VITRINE & SERVIÇOS)
+  // ==========================================
+  return (
+    <div className="min-h-screen bg-[#050505] text-white font-sans pb-24 relative">
+      
+      {/* HEADER */}
+      <header className="bg-black/50 backdrop-blur-md border-b border-white/[0.04] h-16 flex items-center px-4 sticky top-0 z-40">
+        <div className="flex items-center w-full">
+          <button onClick={() => router.push('/')} className="p-2 -ml-2 text-zinc-400 hover:text-white transition">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="ml-2">
+            <h1 className="text-sm font-bold text-white tracking-wide">Monte seu pedido</h1>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{companyName}</p>
+          </div>
         </div>
-      )}
+      </header>
 
-      {/* Lista de Cards */}
-      {loadingAllAppointments ? (
-        <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-2 border-zinc-800 border-t-blue-500 rounded-full animate-spin"></div>
+      <div className="p-4 space-y-6 max-w-2xl mx-auto">
+        
+        {/* ABAS (TABS) */}
+        <div className="flex p-1 bg-[#121214] border border-white/5 rounded-xl">
+          <button 
+            onClick={() => setActiveTab('services')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'services' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Scissors size={14} /> Serviços
+          </button>
+          <button 
+            onClick={() => setActiveTab('products')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'products' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Package size={14} /> Loja / Produtos
+          </button>
         </div>
-      ) : filteredAppointments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-[#0B0B0B] border border-white/[0.06] rounded-2xl border-dashed">
-          <Calendar size={48} className="text-zinc-800 mb-4" />
-          <p className="text-zinc-500 font-medium">Nenhum agendamento encontrado para este período.</p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {filteredAppointments.map((app) => {
-            const date = new Date(app.appointment_date);
+
+        {/* CONTEÚDO DAS ABAS */}
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="w-8 h-8 border-2 border-zinc-800 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-zinc-500 text-sm">Carregando catálogo...</p>
+          </div>
+        ) : (
+          <div className="space-y-3 pb-6 animate-in fade-in duration-300">
             
-            // 🔥 Lógica inteligente de extração do Carrinho
-            const cartDetails = extractCartDetails(app.notes);
-            // Se o agendamento foi via App Novo (não tem a string 'Cliente:' nas notas), o backend já salva o 'customer_name' (se você configurou a UI pra puxar de lá ou via join). 
-            // Para garantir que o nome apareça, fazemos um fallback simples:
-            const clientName = cartDetails.name !== "Cliente" ? cartDetails.name : `Cliente #${app.customer_id}`;
-            
-            return (
-              <div key={app.id} className="group bg-[#0A0A0A] border border-white/5 hover:border-white/10 rounded-2xl p-5 transition-all duration-300 hover:shadow-2xl hover:shadow-black">
-                <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                  
-                  {/* Info Cliente & Carrinho */}
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="w-12 h-12 rounded-full bg-[#121214] border border-white/5 flex items-center justify-center font-bold text-lg text-zinc-400 shrink-0">
-                      {clientName.charAt(0)}
-                    </div>
-                    <div className="space-y-2 w-full">
-                      <h3 className="font-semibold text-white">{clientName}</h3>
-                      
-                      {/* Serviço Principal */}
-                      <p className="text-xs text-zinc-400 flex items-center gap-1.5 font-medium">
-                        <Scissors size={12} className="text-blue-500"/> {servicesMap[app.service_id]?.name || 'Serviço Principal'}
-                      </p>
-
-                      {/* Itens Extras do Carrinho */}
-                      {(cartDetails.extras || cartDetails.products) && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {cartDetails.extras && (
-                            <span className="inline-flex items-center gap-1 bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold px-2.5 py-1 rounded-md">
-                              <Scissors size={10} /> + {cartDetails.extras}
+            {/* ABA SERVIÇOS */}
+            {activeTab === 'services' && (
+              services.length === 0 ? (
+                <p className="text-center text-zinc-500 py-10 bg-[#0A0A0A] rounded-xl border border-dashed border-white/10">Nenhum serviço disponível no momento.</p>
+              ) : (
+                services.map((svc) => {
+                  const added = isInCart(svc.id, 'service');
+                  return (
+                    <div key={`svc-${svc.id}`} className={`bg-[#0A0A0A] border ${added ? 'border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'border-white/5'} rounded-xl p-4 transition-all duration-300`}>
+                      <div className="flex justify-between gap-4">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-sm text-zinc-100">{svc.name}</h3>
+                          <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{svc.description}</p>
+                          <div className="flex items-center gap-2 mt-3">
+                            <span className="text-[10px] text-zinc-400 font-medium bg-zinc-900 px-2 py-1 rounded-md flex items-center gap-1">
+                              <Clock size={10} /> {svc.duration_minutes} min
                             </span>
-                          )}
-                          {cartDetails.products && (
-                            <span className="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-md">
-                              <Package size={10} /> + {cartDetails.products}
-                            </span>
-                          )}
+                            <span className="text-xs font-bold text-white">R$ {svc.price.toFixed(2)}</span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Data/Hora */}
-                  <div className="flex items-center gap-2 text-sm text-zinc-300 font-mono bg-[#121214] px-4 py-2 rounded-xl border border-white/5">
-                    <Calendar size={14} className="text-zinc-500" />
-                    <span>{date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
-                    <span className="text-zinc-700 mx-1">|</span>
-                    <Clock size={14} className="text-zinc-500" />
-                    <span>{date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-
-                  {/* Controles do Barbeiro */}
-                  <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
-                    <select
-                      value={app.barber_id}
-                      onChange={(e) => handleAssignBarber(app.id, parseInt(e.target.value))}
-                      className="bg-[#121214] text-blue-400 text-xs font-bold rounded-xl px-3 py-3 md:py-2.5 border border-white/5 outline-none focus:border-blue-500 transition cursor-pointer flex-1 md:flex-none"
-                    >
-                      {team.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
-
-                    {app.status === 'pending' ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => handleChangeStatus(app.id, 'canceled')} className="p-3 md:p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl transition" title="Cancelar">
-                          <Ban size={18}/>
-                        </button>
-                        <button onClick={() => handleChangeStatus(app.id, 'completed')} className="p-3 md:p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-xl transition" title="Concluir">
-                          <Check size={18}/>
-                        </button>
+                        <div className="flex flex-col justify-end">
+                          <button 
+                            onClick={() => toggleCartItem({ id: svc.id, type: 'service', name: svc.name, price: svc.price })}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                              added ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                            }`}
+                          >
+                            {added ? <Trash2 size={18} /> : <Plus size={18} />}
+                          </button>
+                        </div>
                       </div>
-                    ) : (
-                      <span className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider ${app.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
-                        {app.status === 'completed' ? 'Concluído' : 'Cancelado'}
-                      </span>
-                    )}
-                  </div>
+                    </div>
+                  );
+                })
+              )
+            )}
 
+            {/* ABA PRODUTOS */}
+            {activeTab === 'products' && (
+              products.length === 0 ? (
+                <p className="text-center text-zinc-500 py-10 bg-[#0A0A0A] rounded-xl border border-dashed border-white/10">Nenhum produto na loja no momento.</p>
+              ) : (
+                products.map((prod) => {
+                  const added = isInCart(prod.id, 'product');
+                  return (
+                    <div key={`prod-${prod.id}`} className={`bg-[#0A0A0A] border ${added ? 'border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'border-white/5'} rounded-xl p-4 transition-all duration-300 flex gap-4`}>
+                      <div className="w-20 h-20 rounded-lg bg-zinc-900 border border-white/5 shrink-0 overflow-hidden flex items-center justify-center">
+                        {prod.image_url ? (
+                          <img src={prod.image_url} alt={prod.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package size={24} className="text-zinc-700" />
+                        )}
+                      </div>
+                      <div className="flex-1 flex flex-col justify-between py-1">
+                        <div>
+                          <h3 className="font-bold text-sm text-zinc-100 line-clamp-1">{prod.name}</h3>
+                          {prod.description && <p className="text-xs text-zinc-500 line-clamp-1 mt-0.5">{prod.description}</p>}
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-sm font-bold text-white">R$ {prod.price.toFixed(2)}</span>
+                          <button 
+                            onClick={() => toggleCartItem({ id: prod.id, type: 'product', name: prod.name, price: prod.price })}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                              added ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20'
+                            }`}
+                          >
+                            {added ? 'Remover' : 'Adicionar'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )
+            )}
+
+          </div>
+        )}
+      </div>
+
+      {/* ==========================================
+          BOTÃO FLUTUANTE DO CARRINHO
+      ========================================== */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-40">
+        <button
+          onClick={() => cart.length > 0 && setIsCartOpen(true)}
+          disabled={cart.length === 0}
+          className={`w-full flex items-center justify-between p-4 rounded-xl shadow-2xl transition-all duration-300 ${
+            cart.length > 0 
+              ? 'bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-500 hover:to-sky-300 text-white border border-white/10 active:scale-[0.98]' 
+              : 'bg-[#121214] border border-white/5 text-zinc-500 cursor-not-allowed'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`relative flex items-center justify-center ${cart.length > 0 ? 'text-white' : 'text-zinc-600'}`}>
+              <ShoppingCart size={20} />
+              {cart.length > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-white text-blue-600 text-[10px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full">
+                  {cart.length}
+                </span>
+              )}
+            </div>
+            <span className="font-bold text-sm tracking-wide">
+              {cart.length > 0 ? `Finalizar carrinho (${cart.length})` : 'Carrinho vazio'}
+            </span>
+          </div>
+          {cart.length > 0 && (
+            <span className="font-extrabold text-sm tracking-wider">
+              R$ {cartTotal.toFixed(2)}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ==========================================
+          MODAL DO CARRINHO (CHECKOUT)
+      ========================================== */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          
+          <div className="bg-[#0A0A0A] w-full max-w-md h-full md:h-[90vh] md:mt-[5vh] md:rounded-3xl border border-white/10 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 overflow-hidden">
+            
+            {/* Header Modal */}
+            <div className="flex justify-between items-center p-5 border-b border-white/5 shrink-0 bg-[#0B0B0B]">
+              <h3 className="font-bold text-base flex items-center gap-2 text-white">
+                <ShoppingCart className="text-blue-500" size={18} /> Seu Pedido
+              </h3>
+              <button onClick={() => setIsCartOpen(false)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition">
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+              
+              {/* Resumo dos Itens */}
+              <div className="space-y-2 mb-8">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Itens Selecionados</h4>
+                <div className="bg-[#121214] border border-white/5 rounded-xl p-2 space-y-1">
+                  {cart.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-white/[0.02]">
+                      <div className="flex items-center gap-3">
+                        {item.type === 'service' ? <Scissors size={14} className="text-zinc-500"/> : <Package size={14} className="text-zinc-500"/>}
+                        <span className="text-sm font-medium text-zinc-200">{item.name}</span>
+                      </div>
+                      <span className="text-sm font-bold text-white">R$ {item.price.toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center p-3 border-t border-white/5 mt-2">
+                    <span className="text-sm font-bold text-zinc-400">Total</span>
+                    <span className="text-lg font-extrabold text-blue-400">R$ {cartTotal.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
-            );
-          })}
+
+              {/* Formulário de Finalização */}
+              <form id="checkout-form" onSubmit={handleConfirmar} className="space-y-5">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Dados do Agendamento</h4>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Seu Nome</label>
+                    <div className="relative">
+                      <User size={16} className="absolute left-3.5 top-3.5 text-zinc-500" />
+                      <input type="text" required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Como gosta de ser chamado?" 
+                        className="w-full bg-[#121214] border border-white/5 rounded-xl pl-10 pr-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">WhatsApp</label>
+                    <div className="relative">
+                      <Phone size={16} className="absolute left-3.5 top-3.5 text-zinc-500" />
+                      <input type="tel" required value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(41) 99999-0000" 
+                        className="w-full bg-[#121214] border border-white/5 rounded-xl pl-10 pr-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Data</label>
+                      <div className="relative">
+                        <CalendarDays size={16} className="absolute left-3 top-3.5 text-zinc-500 pointer-events-none" />
+                        <select required value={data} onChange={(e) => setData(e.target.value)} 
+                          className="w-full bg-[#121214] border border-white/5 rounded-xl pl-9 pr-2 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition appearance-none cursor-pointer">
+                          <option value="">Selecione</option>
+                          {gerarDatas().map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Horário</label>
+                      <div className="relative">
+                        <Clock size={16} className="absolute left-3 top-3.5 text-zinc-500 pointer-events-none" />
+                        <select required value={hora} onChange={(e) => setHora(e.target.value)} 
+                          className="w-full bg-[#121214] border border-white/5 rounded-xl pl-9 pr-2 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition appearance-none cursor-pointer">
+                          <option value="">Selecione</option>
+                          {gerarHorarios().map((h) => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="p-5 border-t border-white/5 bg-[#0B0B0B] shrink-0">
+              <button
+                type="submit"
+                form="checkout-form"
+                disabled={enviando}
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
+              >
+                {enviando ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processando...
+                  </>
+                ) : (
+                  <>
+                    <Check size={20} /> Confirmar Reserva
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
+
     </div>
   );
 }

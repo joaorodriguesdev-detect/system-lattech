@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, Clock, Ban, Calendar, Scissors } from 'lucide-react';
+import { Check, Clock, Ban, Calendar, Scissors, Package, Info } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 interface AgendamentosViewProps {
@@ -76,7 +76,6 @@ export default function AgendamentosView({ token, team, servicesMap }: Agendamen
     }
   };
 
-  // 🔥 Filtro de agendamentos
   const filteredAppointments = allAppointments.filter((a) => {
     if (appointmentFilter === 'mes') {
       return a.appointment_date.startsWith(selectedMonth);
@@ -84,14 +83,35 @@ export default function AgendamentosView({ token, team, servicesMap }: Agendamen
     return true;
   });
 
+  // Função para extrair detalhes do carrinho a partir das anotações (campo 'notes')
+  const extractCartDetails = (notes: string | null) => {
+    if (!notes) return { name: "Cliente", extras: null, products: null };
+    
+    // Antigo padrão (Cliente: Nome - Tel: Numero)
+    const oldNameMatch = notes.match(/Cliente:\s*(.*?)(?:\s*-\s*Tel:|$)/);
+    let name = oldNameMatch ? oldNameMatch[1].trim() : "Cliente";
+
+    // Novo padrão (Carrinho não envia o nome nas notas, então pegamos apenas extras e produtos)
+    let extras = null;
+    let products = null;
+
+    const extrasMatch = notes.match(/Serviços extras:\s*(.*?)\./);
+    if (extrasMatch) extras = extrasMatch[1].trim();
+
+    const productsMatch = notes.match(/Produtos reservados:\s*(.*?)\./);
+    if (productsMatch) products = productsMatch[1].trim();
+
+    return { name, extras, products };
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
       
       {/* Header Premium */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-white text-2xl font-bold tracking-tight">Agendamentos</h2>
-          <p className="text-zinc-500 text-sm">Gerencie o fluxo da sua barbearia.</p>
+          <p className="text-zinc-500 text-sm">Gerencie os agendamentos e o carrinho dos clientes.</p>
         </div>
         
         <div className="flex items-center gap-2 bg-[#0B0B0B] p-1 rounded-xl border border-white/5">
@@ -109,14 +129,13 @@ export default function AgendamentosView({ token, team, servicesMap }: Agendamen
         </div>
       </div>
 
-      {/* 🔥 DE VOLTA: Input de Mês */}
       {appointmentFilter === 'mes' && (
         <div className="flex justify-end animate-in fade-in duration-300">
           <input
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-[#0B0B0B] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 transition cursor-pointer"
+            className="bg-[#0B0B0B] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition cursor-pointer"
           />
         </div>
       )}
@@ -124,71 +143,94 @@ export default function AgendamentosView({ token, team, servicesMap }: Agendamen
       {/* Lista de Cards */}
       {loadingAllAppointments ? (
         <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-2 border-zinc-800 border-t-amber-500 rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-2 border-zinc-800 border-t-blue-500 rounded-full animate-spin"></div>
         </div>
       ) : filteredAppointments.length === 0 ? (
-        // 🔥 DE VOLTA: Empty State Bonito
         <div className="flex flex-col items-center justify-center py-20 bg-[#0B0B0B] border border-white/[0.06] rounded-2xl border-dashed">
           <Calendar size={48} className="text-zinc-800 mb-4" />
           <p className="text-zinc-500 font-medium">Nenhum agendamento encontrado para este período.</p>
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           {filteredAppointments.map((app) => {
             const date = new Date(app.appointment_date);
-            const nome = app.notes?.split('Cliente:')[1]?.split('-')[0]?.trim() || "Cliente";
+            
+            // 🔥 Lógica inteligente de extração do Carrinho
+            const cartDetails = extractCartDetails(app.notes);
+            // Se o agendamento foi via App Novo (não tem a string 'Cliente:' nas notas), o backend já salva o 'customer_name' (se você configurou a UI pra puxar de lá ou via join). 
+            // Para garantir que o nome apareça, fazemos um fallback simples:
+            const clientName = cartDetails.name !== "Cliente" ? cartDetails.name : `Cliente #${app.customer_id}`;
             
             return (
-              <div key={app.id} className="group bg-[#0B0B0B] border border-white/[0.06] hover:border-white/[0.12] rounded-2xl p-5 transition-all duration-300 hover:shadow-2xl hover:shadow-black">
+              <div key={app.id} className="group bg-[#0A0A0A] border border-white/5 hover:border-white/10 rounded-2xl p-5 transition-all duration-300 hover:shadow-2xl hover:shadow-black">
                 <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
                   
-                  {/* Info Cliente */}
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center font-bold text-lg text-zinc-400">
-                      {nome.charAt(0)}
+                  {/* Info Cliente & Carrinho */}
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-full bg-[#121214] border border-white/5 flex items-center justify-center font-bold text-lg text-zinc-400 shrink-0">
+                      {clientName.charAt(0)}
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-white">{nome}</h3>
-                      <p className="text-xs text-zinc-500 flex items-center gap-1 mt-0.5">
-                        <Scissors size={12}/> {servicesMap[app.service_id]?.name || 'Serviço'}
+                    <div className="space-y-2 w-full">
+                      <h3 className="font-semibold text-white">{clientName}</h3>
+                      
+                      {/* Serviço Principal */}
+                      <p className="text-xs text-zinc-400 flex items-center gap-1.5 font-medium">
+                        <Scissors size={12} className="text-blue-500"/> {servicesMap[app.service_id]?.name || 'Serviço Principal'}
                       </p>
+
+                      {/* Itens Extras do Carrinho */}
+                      {(cartDetails.extras || cartDetails.products) && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {cartDetails.extras && (
+                            <span className="inline-flex items-center gap-1 bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold px-2.5 py-1 rounded-md">
+                              <Scissors size={10} /> + {cartDetails.extras}
+                            </span>
+                          )}
+                          {cartDetails.products && (
+                            <span className="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-md">
+                              <Package size={10} /> + {cartDetails.products}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Data/Hora */}
-                  <div className="flex items-center gap-2 text-sm text-zinc-300 font-mono">
-                    <Calendar size={16} className="text-zinc-600" />
+                  <div className="flex items-center gap-2 text-sm text-zinc-300 font-mono bg-[#121214] px-4 py-2 rounded-xl border border-white/5">
+                    <Calendar size={14} className="text-zinc-500" />
                     <span>{date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
-                    <span className="text-zinc-700">|</span>
-                    <Clock size={16} className="text-zinc-600" />
+                    <span className="text-zinc-700 mx-1">|</span>
+                    <Clock size={14} className="text-zinc-500" />
                     <span>{date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
 
-                  {/* Controles */}
+                  {/* Controles do Barbeiro */}
                   <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
                     <select
                       value={app.barber_id}
                       onChange={(e) => handleAssignBarber(app.id, parseInt(e.target.value))}
-                      className="bg-zinc-900 text-amber-400 text-xs font-bold rounded-lg px-3 py-2.5 md:py-2 border border-white/5 outline-none focus:border-amber-500 transition cursor-pointer flex-1 md:flex-none"
+                      className="bg-[#121214] text-blue-400 text-xs font-bold rounded-xl px-3 py-3 md:py-2.5 border border-white/5 outline-none focus:border-blue-500 transition cursor-pointer flex-1 md:flex-none"
                     >
                       {team.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
 
                     {app.status === 'pending' ? (
                       <div className="flex gap-2">
-                        <button onClick={() => handleChangeStatus(app.id, 'canceled')} className="p-2.5 md:p-2 bg-rose-500/5 hover:bg-rose-500/10 text-zinc-500 hover:text-rose-400 rounded-lg transition" title="Cancelar">
+                        <button onClick={() => handleChangeStatus(app.id, 'canceled')} className="p-3 md:p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl transition" title="Cancelar">
                           <Ban size={18}/>
                         </button>
-                        <button onClick={() => handleChangeStatus(app.id, 'completed')} className="p-2.5 md:p-2 bg-emerald-500/5 hover:bg-emerald-500/10 text-zinc-500 hover:text-emerald-400 rounded-lg transition" title="Concluir">
+                        <button onClick={() => handleChangeStatus(app.id, 'completed')} className="p-3 md:p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-xl transition" title="Concluir">
                           <Check size={18}/>
                         </button>
                       </div>
                     ) : (
-                      <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${app.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                      <span className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider ${app.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
                         {app.status === 'completed' ? 'Concluído' : 'Cancelado'}
                       </span>
                     )}
                   </div>
+
                 </div>
               </div>
             );

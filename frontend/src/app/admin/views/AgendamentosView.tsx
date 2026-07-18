@@ -92,7 +92,7 @@ export default function AgendamentosView({ token, team, servicesMap }: Agendamen
     let products = null;
 
     // Adicionamos a flag 's' (dotAll) no final para o regex ler as quebras de linha (\n) do carrinho
-    const oldNameMatch = notes.match(/Cliente:\s*(.*?)(?:\s*-\s*Tel:|$)/s);
+    const oldNameMatch = notes.match(/Cliente:\s*([\s\S]*?)(?:\s*-\s*Tel:|$)/);
     
     if (oldNameMatch) {
        // Isola apenas a primeira linha do bloco de notas para ser o Nome + Tag

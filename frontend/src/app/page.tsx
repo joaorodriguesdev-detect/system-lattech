@@ -195,10 +195,14 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#050505] text-white font-sans overflow-hidden flex flex-col items-center">
       
-      {/* Background Premium Glow (Azul minimalista) */}
+      {/* Background com Imagem e Overlay Premium */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-start justify-center">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-        <div className="w-[400px] h-[400px] bg-blue-600/10 blur-[120px] rounded-full mt-[-100px]"></div>
+        {/* Imagem de Fundo (Ajustada para opacidade sutil) */}
+        <div className="absolute inset-0 bg-[url('/imagens/fundoapp.png')] bg-cover bg-center bg-no-repeat opacity-30"></div>
+        {/* Overlay Escuro para Legibilidade */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/50 via-[#050505]/80 to-[#050505]"></div>
+        {/* Glow Azul no topo */}
+        <div className="w-[400px] h-[400px] bg-blue-600/20 blur-[120px] rounded-full mt-[-100px] absolute"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md px-6 pt-16 pb-10 flex flex-col items-center min-h-screen">
@@ -206,7 +210,7 @@ export default function Home() {
         {/* LOGO DA EMPRESA */}
         <div className="relative w-28 h-28 mb-8">
           <div className="absolute inset-0 bg-blue-500/10 rounded-2xl blur-xl"></div>
-          <div className="relative w-full h-full rounded-2xl border border-white/10 bg-[#0A0A0A] flex items-center justify-center overflow-hidden shadow-2xl">
+          <div className="relative w-full h-full rounded-2xl border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-2xl">
             {companyLogo ? (
               <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-2" />
             ) : (
@@ -217,10 +221,10 @@ export default function Home() {
 
         {/* NOME DA EMPRESA */}
         <div className="text-center mb-10 space-y-2">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
             {companyName}
           </h1>
-          <p className="text-zinc-500 text-sm font-medium tracking-wide">
+          <p className="text-zinc-400 text-sm font-medium tracking-wide drop-shadow-sm">
             Praticidade no seu agendamento
           </p>
         </div>
@@ -245,7 +249,7 @@ export default function Home() {
           {/* Botões Secundários: Clean Glassmorphism */}
           <button 
             onClick={() => setShowPostsModal(true)}
-            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214] border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b] transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214]/80 backdrop-blur-md border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b]/90 transition-all duration-300 active:scale-[0.98]"
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-colors">
@@ -258,7 +262,7 @@ export default function Home() {
 
           <button 
             onClick={() => setShowLocationModal(true)}
-            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214] border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b] transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214]/80 backdrop-blur-md border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b]/90 transition-all duration-300 active:scale-[0.98]"
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-colors">
@@ -271,7 +275,7 @@ export default function Home() {
 
           <button 
             onClick={() => setShowReviewsModal(true)}
-            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214] border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b] transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214]/80 backdrop-blur-md border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b]/90 transition-all duration-300 active:scale-[0.98]"
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-colors">
@@ -288,7 +292,7 @@ export default function Home() {
         <footer className="mt-auto pt-16 flex flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
             <Zap size={12} className="text-blue-500" />
-            <span className="text-xs font-bold text-zinc-400 tracking-wide">LAT System</span>
+            <span className="text-xs font-bold text-zinc-400 tracking-wide drop-shadow-md">LAT System</span>
           </div>
         </footer>
       </div>

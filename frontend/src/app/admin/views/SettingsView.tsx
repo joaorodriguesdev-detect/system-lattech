@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { Settings, Image as ImageIcon, MapPin, Phone, CreditCard, CheckCircle, Clock } from 'lucide-react';
+import { Settings, Image as ImageIcon, MapPin, Phone, CreditCard, CheckCircle, Clock, Ban } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 export default function SettingsView({ token }: { token: string }) {

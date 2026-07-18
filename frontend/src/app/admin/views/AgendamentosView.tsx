@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, Clock, Ban, Calendar, Scissors, Package, Info } from 'lucide-react';
+import { Check, Clock, Ban, Calendar, Scissors, Package } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 interface AgendamentosViewProps {
@@ -83,23 +83,34 @@ export default function AgendamentosView({ token, team, servicesMap }: Agendamen
     return true;
   });
 
-  // Função para extrair detalhes do carrinho a partir das anotações (campo 'notes')
+  // 🔥 LEITOR INTELIGENTE CORRIGIDO 🔥
   const extractCartDetails = (notes: string | null) => {
     if (!notes) return { name: "Cliente", extras: null, products: null };
     
-    // Antigo padrão (Cliente: Nome - Tel: Numero)
-    const oldNameMatch = notes.match(/Cliente:\s*(.*?)(?:\s*-\s*Tel:|$)/);
-    let name = oldNameMatch ? oldNameMatch[1].trim() : "Cliente";
-
-    // Novo padrão (Carrinho não envia o nome nas notas, então pegamos apenas extras e produtos)
+    let name = "Cliente";
     let extras = null;
     let products = null;
 
-    const extrasMatch = notes.match(/Serviços extras:\s*(.*?)\./);
-    if (extrasMatch) extras = extrasMatch[1].trim();
+    // Adicionamos a flag 's' (dotAll) no final para o regex ler as quebras de linha (\n) do carrinho
+    const oldNameMatch = notes.match(/Cliente:\s*(.*?)(?:\s*-\s*Tel:|$)/s);
+    
+    if (oldNameMatch) {
+       // Isola apenas a primeira linha do bloco de notas para ser o Nome + Tag
+       // Ex: "Joao Luiz | Agendamento via app (Carrinho)."
+       name = oldNameMatch[1].trim().split('\n')[0].trim();
+    }
 
-    const productsMatch = notes.match(/Produtos reservados:\s*(.*?)\./);
-    if (productsMatch) products = productsMatch[1].trim();
+    // Procura os serviços extras e remove o ponto final caso exista
+    const extrasMatch = notes.match(/Serviços extras:\s*([^\n]+)/);
+    if (extrasMatch) {
+      extras = extrasMatch[1].replace(/\.$/, '').trim(); 
+    }
+
+    // Procura os produtos e remove o ponto final caso exista
+    const productsMatch = notes.match(/Produtos reservados:\s*([^\n]+)/);
+    if (productsMatch) {
+      products = productsMatch[1].replace(/\.$/, '').trim();
+    }
 
     return { name, extras, products };
   };
@@ -154,11 +165,7 @@ export default function AgendamentosView({ token, team, servicesMap }: Agendamen
         <div className="grid gap-4">
           {filteredAppointments.map((app) => {
             const date = new Date(app.appointment_date);
-            
-            // 🔥 Lógica inteligente de extração do Carrinho
             const cartDetails = extractCartDetails(app.notes);
-            // Se o agendamento foi via App Novo (não tem a string 'Cliente:' nas notas), o backend já salva o 'customer_name' (se você configurou a UI pra puxar de lá ou via join). 
-            // Para garantir que o nome apareça, fazemos um fallback simples:
             const clientName = cartDetails.name !== "Cliente" ? cartDetails.name : `Cliente #${app.customer_id}`;
             
             return (

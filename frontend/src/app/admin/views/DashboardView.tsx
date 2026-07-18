@@ -155,7 +155,7 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
               <div>
                 <p className="text-sm font-bold text-white">
                   {companyPlan.status === 'trial'
-                    ? `Período de Teste — ${companyPlan.dias_restantes} dia${companyPlan.dias_restantes !== 1 ? 's' : ''} restante${companyPlan.dias_restantes !== 1 ? 's' : ''}`
+                    ? `Plano Pro — ${companyPlan.dias_restantes} dia${companyPlan.dias_restantes !== 1 ? 's' : ''} restante${companyPlan.dias_restantes !== 1 ? 's' : ''}`
                     : 'Plano Ativo'}
                 </p>
                 <p className="text-xs text-zinc-400 mt-0.5">

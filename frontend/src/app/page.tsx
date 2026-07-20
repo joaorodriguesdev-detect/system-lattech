@@ -240,39 +240,53 @@ export default function Home() {
             </div>
             <ChevronRight className="text-blue-400/50 group-hover:text-blue-400 transition-colors" size={16} />
           </button>
+{/* MENU DE OPÇÕES MINIMALISTA (TELA DO CELULAR OTIMIZADA) */}
+<div className="w-full space-y-3.5">
+          
+          {/* Botão Primário: Agendar */}
+          <button 
+            onClick={() => router.push('/agendamento')}
+            className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 backdrop-blur-md transition-all duration-300 active:scale-[0.98] shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+          >
+            <div className="flex items-center gap-3.5">
+              <CalendarDays size={22} className="text-blue-400 group-hover:scale-110 transition-transform duration-300" />
+              <span className="font-bold text-blue-400 text-base tracking-wide">Agendar Horário</span>
+            </div>
+            <ChevronRight className="text-blue-400/60 group-hover:text-blue-400 transition-colors" size={20} />
+          </button>
 
-          {/* Botões Secundários: Minimalistas */}
+          {/* Botões Secundários: Minimalistas e com Menos Transparência */}
           <button 
             onClick={() => setShowPostsModal(true)}
-            className="w-full group flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-md transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3">
-              <ImageIcon size={18} className="text-zinc-500 group-hover:text-zinc-300 transition-colors" />
-              <span className="font-medium text-zinc-400 text-sm group-hover:text-zinc-200 transition-colors">Nossos serviços</span>
+            <div className="flex items-center gap-3.5">
+              <ImageIcon size={22} className="text-zinc-300 group-hover:text-white transition-colors" />
+              <span className="font-semibold text-zinc-200 text-base group-hover:text-white transition-colors">Nossos serviços</span>
             </div>
-            <ChevronRight className="text-zinc-600 group-hover:text-zinc-400 transition-colors" size={16} />
+            <ChevronRight className="text-zinc-500 group-hover:text-zinc-300 transition-colors" size={20} />
           </button>
 
           <button 
             onClick={() => setShowLocationModal(true)}
-            className="w-full group flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-md transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3">
-              <MapPin size={18} className="text-zinc-500 group-hover:text-zinc-300 transition-colors" />
-              <span className="font-medium text-zinc-400 text-sm group-hover:text-zinc-200 transition-colors">Nossa localização</span>
+            <div className="flex items-center gap-3.5">
+              <MapPin size={22} className="text-zinc-300 group-hover:text-white transition-colors" />
+              <span className="font-semibold text-zinc-200 text-base group-hover:text-white transition-colors">Nossa localização</span>
             </div>
-            <ChevronRight className="text-zinc-600 group-hover:text-zinc-400 transition-colors" size={16} />
+            <ChevronRight className="text-zinc-500 group-hover:text-zinc-300 transition-colors" size={20} />
           </button>
 
           <button 
             onClick={() => setShowReviewsModal(true)}
-            className="w-full group flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-md transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3">
-              <Star size={18} className="text-zinc-500 group-hover:text-zinc-300 transition-colors" />
-              <span className="font-medium text-zinc-400 text-sm group-hover:text-zinc-200 transition-colors">Avaliações</span>
+            <div className="flex items-center gap-3.5">
+              <Star size={22} className="text-zinc-300 group-hover:text-white transition-colors" />
+              <span className="font-semibold text-zinc-200 text-base group-hover:text-white transition-colors">Avaliações</span>
             </div>
-            <ChevronRight className="text-zinc-600 group-hover:text-zinc-400 transition-colors" size={16} />
+            <ChevronRight className="text-zinc-500 group-hover:text-zinc-300 transition-colors" size={20} />
           </button>
 
         </div>
@@ -281,7 +295,7 @@ export default function Home() {
         <footer className="mt-auto pt-16 flex flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
             <Zap size={12} className="text-blue-500" />
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest drop-shadow-md">LAT System</span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest drop-shadow-md">Lattech Barber Pro</span>
           </div>
         </footer>
       </div>

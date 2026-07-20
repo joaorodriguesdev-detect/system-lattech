@@ -225,7 +225,7 @@ export default function Home() {
             {companyName}
           </h1>
           <p className="text-zinc-400 text-sm font-medium tracking-wide drop-shadow-sm">
-            Praticidade no seu agendamento
+            Barba, Cabelo & Bigode 
           </p>
         </div>
 

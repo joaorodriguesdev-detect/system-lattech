@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, UnifrakturMaguntia } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, UnifrakturMaguntia, Rye } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 
@@ -19,7 +19,13 @@ const unifrakturMaguntia = UnifrakturMaguntia({
   subsets: ["latin"],
 });
 
-// 🔥 SOLUÇÃO: Transformamos a Metadata em Dinâmica para ler o domínio acessado 🔥
+// 🔥 Nova fonte Rye instanciada e pronta para o tema Vintage!
+const rye = Rye({
+  variable: "--font-rye",
+  weight: "400",
+  subsets: ["latin"],
+});
+
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
   const host = headersList.get("host") || "";
@@ -72,7 +78,8 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${plusJakarta.variable} ${unifrakturMaguntia.variable} h-full antialiased`}
+      // 🔥 A variável da Rye injetada globalmente na aplicação
+      className={`${inter.variable} ${plusJakarta.variable} ${unifrakturMaguntia.variable} ${rye.variable} h-full antialiased`}
     >
       <head>
         <meta

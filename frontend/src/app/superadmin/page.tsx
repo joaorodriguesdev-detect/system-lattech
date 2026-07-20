@@ -3,11 +3,12 @@
 import { useEffect, useState, FormEvent } from 'react';
 import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { clearAuthSession, getAuthToken } from '@/lib/session';
 import {
   Building2, Plus, Search, ShieldAlert, X, 
-  Activity, Link as LinkIcon, UserCircle, Mail, Lock, Trash2, Camera,
-  CalendarDays, Zap, CreditCard, PowerOff, CheckCircle2, AlertOctagon
+  Link as LinkIcon, UserCircle, Mail, Lock, Trash2,
+  CalendarDays, Zap, CreditCard, PowerOff, CheckCircle2, AlertOctagon, Edit2
 } from 'lucide-react';
 
 interface Company {
@@ -27,11 +28,18 @@ export default function SuperAdminPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
-  // Estados do Modal
+  // Estados do Modal de Criação
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // Campos do Formulário
+  // Estados do Modal de Edição
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Campos do Formulário de Criação
   const [newName, setNewName] = useState('');
   const [newSubdomain, setNewSubdomain] = useState('');
   const [adminName, setAdminName] = useState('');
@@ -80,6 +88,7 @@ export default function SuperAdminPage() {
 
   useEffect(() => {
     fetchCompanies();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Efeito de Debounce para validação do Subdomínio
@@ -161,6 +170,50 @@ export default function SuperAdminPage() {
     } finally {
       setCreating(false);
       setIsAiProvisioning(false);
+    }
+  };
+
+  // Funções de Edição
+  const handleOpenEdit = (company: Company) => {
+    setEditingCompany(company);
+    setEditName(company.name);
+    setEditPassword(''); // Deixa a senha em branco por padrão (não altera se não preencher)
+    setShowEditModal(true);
+  };
+
+  const handleUpdateCompany = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editingCompany) return;
+
+    setIsUpdating(true);
+    try {
+      // Endpoint PATCH que criaremos na API
+      const res = await fetch(`${API_BASE_URL}/system/companies/${editingCompany.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-master-token': getSuperToken()
+        },
+        body: JSON.stringify({
+          name: editName,
+          // Só envia a senha se o superadmin digitou algo novo
+          ...(editPassword ? { admin_password: editPassword } : {})
+        }),
+      });
+
+      if (res.ok) {
+        alert('✅ Dados atualizados com sucesso!');
+        // Atualiza a tabela localmente sem precisar de um novo fetch completo
+        setCompanies((prev) => prev.map((c) => (c.id === editingCompany.id ? { ...c, name: editName } : c)));
+        setShowEditModal(false);
+      } else {
+        const err = await res.json();
+        alert(`❌ Erro: ${err.detail || 'Falha ao atualizar.'}`);
+      }
+    } catch {
+      alert('❌ Erro de conexão com o servidor.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -385,7 +438,13 @@ export default function SuperAdminPage() {
                             {company.logo_url ? <Image src={company.logo_url} alt="Logo" width={48} height={48} unoptimized className="w-full h-full object-cover" /> : <Building2 size={20} className="text-zinc-700" />}
                           </div>
                           <div>
-                            <span className="font-bold text-zinc-100 text-base block group-hover:text-emerald-400 transition-colors">{company.name}</span>
+                            {/* 🔥 Container alterado para agrupar o nome e o ícone de lápis */}
+                            <div className="flex items-center gap-2 group/edit">
+                              <span className="font-bold text-zinc-100 text-base block group-hover:text-emerald-400 transition-colors">{company.name}</span>
+                              <button onClick={() => handleOpenEdit(company)} className="opacity-0 group-hover/edit:opacity-100 p-1.5 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all" title="Editar Informações">
+                                <Edit2 size={14} />
+                              </button>
+                            </div>
                             <span className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5 block">Tenant Ativo</span>
                           </div>
                         </div>
@@ -456,7 +515,7 @@ export default function SuperAdminPage() {
         </div>
       </main>
 
-      {/* Modal Premium */}
+      {/* Modal de Criação */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => !creating && setShowModal(false)} />
@@ -504,7 +563,6 @@ export default function SuperAdminPage() {
                       />
                       <span className="bg-[#111] border border-white/10 border-l-0 rounded-r-xl px-4 py-3.5 text-sm text-emerald-500/70 font-mono select-none flex items-center gap-2">
                         .lattech.com.br
-                        {/* Feedback em tempo real */}
                         {isCheckingSlug && <div className="w-3 h-3 border-2 border-zinc-500 border-t-zinc-200 rounded-full animate-spin" />}
                         {!isCheckingSlug && isSlugAvailable === true && <CheckCircle2 size={14} className="text-emerald-500" />}
                         {!isCheckingSlug && isSlugAvailable === false && <X size={14} className="text-rose-500" />}
@@ -573,6 +631,70 @@ export default function SuperAdminPage() {
                     <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Provisionando Nave...</>
                   ) : (
                     <><Zap size={18} /> Iniciar Operação SaaS</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 Novo Modal de Edição (Somente SuperAdmin) */}
+      {showEditModal && editingCompany && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => !isUpdating && setShowEditModal(false)} />
+          
+          <div className="relative bg-[#0a0a0a] border border-white/10 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-teal-500 to-emerald-500" />
+            
+            <div className="flex items-center justify-between px-8 py-6 border-b border-white/[0.04] bg-[#050505]">
+              <div>
+                <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center"><Edit2 size={18} className="text-blue-400" /></div>
+                  Editar Informações do Tenant
+                </h2>
+                <p className="text-xs text-zinc-500 mt-1 ml-11">Acesso irrestrito ao inquilino: #{String(editingCompany.id).padStart(4, '0')}</p>
+              </div>
+              <button onClick={() => !isUpdating && setShowEditModal(false)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateCompany} className="p-8 space-y-6">
+              
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Nome Comercial</label>
+                <input 
+                  type="text" 
+                  required 
+                  value={editName} 
+                  onChange={(e) => setEditName(e.target.value)} 
+                  placeholder="Nome da Barbearia" 
+                  className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:bg-[#111] transition-all" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5"><Lock size={14}/> Nova Senha do Proprietário</label>
+                <input 
+                  type="password" 
+                  value={editPassword} 
+                  onChange={(e) => setEditPassword(e.target.value)} 
+                  placeholder="Deixe em branco para não alterar" 
+                  className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:bg-[#111] transition-all" 
+                />
+              </div>
+
+              <div className="pt-4 flex gap-4">
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 font-bold text-sm transition-colors w-1/3">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isUpdating} className="flex-1 group relative flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden">
+                  <div className="absolute inset-0 w-full h-full bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out skew-x-12" />
+                  {isUpdating ? (
+                    <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Atualizando...</>
+                  ) : (
+                    <><CheckCircle2 size={18} /> Salvar Alterações</>
                   )}
                 </button>
               </div>

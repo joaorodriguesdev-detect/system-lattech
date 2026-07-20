@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
             session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMP;"))
             session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS data_cadastro TIMESTAMP;"))
             
-            # 👇 A MARRETA: Transforma em texto (::text) só para fazer a busca sem o Postgres encher o saco!
+            #  Transforma em texto (::text) só para fazer a busca sem o Postgres encher o saco!
             session.exec(text("UPDATE companies SET status = 'TRIAL' WHERE status::text = 'trial';"))
             session.exec(text("UPDATE companies SET status = 'ACTIVE' WHERE status::text = 'active';"))
             session.exec(text("UPDATE companies SET status = 'SUSPENDED' WHERE status::text = 'suspended';"))

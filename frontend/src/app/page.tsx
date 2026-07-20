@@ -226,22 +226,8 @@ export default function Home() {
           </p>
         </div>
 
-        {/* MENU DE OPÇÕES MINIMALISTA */}
-        <div className="w-full space-y-2.5">
-          
-          {/* Botão Primário: Agendar */}
-          <button 
-            onClick={() => router.push('/agendamento')}
-            className="w-full group flex items-center justify-between px-4 py-3.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all duration-300 active:scale-[0.98]"
-          >
-            <div className="flex items-center gap-3">
-              <CalendarDays size={18} className="text-blue-400 group-hover:scale-110 transition-transform duration-300" />
-              <span className="font-semibold text-blue-400 text-sm tracking-wide">Agendar Horário</span>
-            </div>
-            <ChevronRight className="text-blue-400/50 group-hover:text-blue-400 transition-colors" size={16} />
-          </button>
-{/* MENU DE OPÇÕES MINIMALISTA (TELA DO CELULAR OTIMIZADA) */}
-<div className="w-full space-y-3.5">
+        {/* MENU DE OPÇÕES MINIMALISTA (TELA DO CELULAR OTIMIZADA) */}
+        <div className="w-full space-y-3.5">
           
           {/* Botão Primário: Agendar */}
           <button 
@@ -291,7 +277,7 @@ export default function Home() {
 
         </div>
 
-        {/* Rodapé SaaS Minimalista */}
+        {/* Rodapé SaaS Minimalistaa */}
         <footer className="mt-auto pt-16 flex flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
             <Zap size={12} className="text-blue-500" />

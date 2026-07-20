@@ -190,109 +190,98 @@ export default function Home() {
   }
 
   // ==========================================
-  // RENDERIZAÇÃO DA PÁGINA PRINCIPAL (PREMIUM UI)
+  // RENDERIZAÇÃO DA PÁGINA PRINCIPAL (PREMIUM UI MINIMALISTA)
   // ==========================================
   return (
     <div className="relative min-h-screen bg-[#050505] text-white font-sans overflow-hidden flex flex-col items-center">
       
       {/* Background com Imagem e Overlay Premium */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-start justify-center">
-        {/* Imagem de Fundo com opacidade aumentada para ficar mais visível */}
         <div className="absolute inset-0 bg-[url('/imagens/fundoapp.png')] bg-cover bg-center bg-no-repeat opacity-60"></div>
-        {/* Overlay Escuro (Clareado no topo, escuro na base) */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/30 via-[#050505]/70 to-[#050505]"></div>
-        {/* Glow Azul no topo */}
         <div className="w-[400px] h-[400px] bg-blue-600/30 blur-[120px] rounded-full mt-[-100px] absolute"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md px-6 pt-16 pb-10 flex flex-col items-center min-h-screen">
         
         {/* LOGO DA EMPRESA */}
-        <div className="relative w-28 h-28 mb-8">
+        <div className="relative w-24 h-24 mb-6">
           <div className="absolute inset-0 bg-blue-500/10 rounded-2xl blur-xl"></div>
           <div className="relative w-full h-full rounded-2xl border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-2xl">
             {companyLogo ? (
               <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-2" />
             ) : (
-              <Scissors size={32} className="text-zinc-700" />
+              <Scissors size={28} className="text-zinc-700" />
             )}
           </div>
         </div>
 
-        {/* NOME DA EMPRESA */}
-        <div className="text-center mb-10 space-y-2">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
+        {/* NOME DA EMPRESA COM FONTE VINTAGE (RYE) */}
+        <div className="text-center mb-10 space-y-3">
+          <h1 className="text-4xl font-[family-name:var(--font-rye)] tracking-widest text-white drop-shadow-md">
             {companyName}
           </h1>
-          <p className="text-zinc-400 text-sm font-medium tracking-wide drop-shadow-sm">
-            Barba, Cabelo & Bigode 
+          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] drop-shadow-sm">
+            Cabelo, Barba & Bigode !
           </p>
         </div>
 
-        {/* MENU DE OPÇÕES */}
-        <div className="w-full space-y-3">
+        {/* MENU DE OPÇÕES MINIMALISTA */}
+        <div className="w-full space-y-2.5">
           
-          {/* Botão Primário: Agendar (Degradê Azul com Branco) */}
+          {/* Botão Primário: Agendar */}
           <button 
             onClick={() => router.push('/agendamento')}
-            className="w-full group relative flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-500 hover:to-sky-300 transition-all duration-300 active:scale-[0.98] shadow-lg shadow-blue-500/20 border border-white/10"
+            className="w-full group flex items-center justify-between px-4 py-3.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-black/20 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
-                <CalendarDays size={20} />
-              </div>
-              <span className="font-bold text-white text-lg tracking-wide">Agendar</span>
+            <div className="flex items-center gap-3">
+              <CalendarDays size={18} className="text-blue-400 group-hover:scale-110 transition-transform duration-300" />
+              <span className="font-semibold text-blue-400 text-sm tracking-wide">Agendar Horário</span>
             </div>
-            <ChevronRight className="text-white/70 group-hover:text-white transition-colors" size={24} />
+            <ChevronRight className="text-blue-400/50 group-hover:text-blue-400 transition-colors" size={16} />
           </button>
 
-          {/* Botões Secundários: Clean Glassmorphismm */}
+          {/* Botões Secundários: Minimalistas */}
           <button 
             onClick={() => setShowPostsModal(true)}
-            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214]/80 backdrop-blur-md border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b]/90 transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-colors">
-                <ImageIcon size={20} />
-              </div>
-              <span className="font-medium text-zinc-300 group-hover:text-white transition-colors">Nossos serviços</span>
+            <div className="flex items-center gap-3">
+              <ImageIcon size={18} className="text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+              <span className="font-medium text-zinc-400 text-sm group-hover:text-zinc-200 transition-colors">Nossos serviços</span>
             </div>
-            <ChevronRight className="text-zinc-600 group-hover:text-blue-400 transition-colors" size={20} />
+            <ChevronRight className="text-zinc-600 group-hover:text-zinc-400 transition-colors" size={16} />
           </button>
 
           <button 
             onClick={() => setShowLocationModal(true)}
-            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214]/80 backdrop-blur-md border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b]/90 transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-colors">
-                <MapPin size={20} />
-              </div>
-              <span className="font-medium text-zinc-300 group-hover:text-white transition-colors">Nossa localização</span>
+            <div className="flex items-center gap-3">
+              <MapPin size={18} className="text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+              <span className="font-medium text-zinc-400 text-sm group-hover:text-zinc-200 transition-colors">Nossa localização</span>
             </div>
-            <ChevronRight className="text-zinc-600 group-hover:text-blue-400 transition-colors" size={20} />
+            <ChevronRight className="text-zinc-600 group-hover:text-zinc-400 transition-colors" size={16} />
           </button>
 
           <button 
             onClick={() => setShowReviewsModal(true)}
-            className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214]/80 backdrop-blur-md border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b]/90 transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-colors">
-                <Star size={20} />
-              </div>
-              <span className="font-medium text-zinc-300 group-hover:text-white transition-colors">Avaliações</span>
+            <div className="flex items-center gap-3">
+              <Star size={18} className="text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+              <span className="font-medium text-zinc-400 text-sm group-hover:text-zinc-200 transition-colors">Avaliações</span>
             </div>
-            <ChevronRight className="text-zinc-600 group-hover:text-blue-400 transition-colors" size={20} />
+            <ChevronRight className="text-zinc-600 group-hover:text-zinc-400 transition-colors" size={16} />
           </button>
 
         </div>
 
         {/* Rodapé SaaS Minimalista */}
         <footer className="mt-auto pt-16 flex flex-col items-center justify-center gap-2">
-          <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
             <Zap size={12} className="text-blue-500" />
-            <span className="text-xs font-bold text-zinc-400 tracking-wide drop-shadow-md">LAT System</span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest drop-shadow-md">LAT System</span>
           </div>
         </footer>
       </div>
@@ -324,7 +313,7 @@ export default function Home() {
                   <p className="text-xs text-zinc-600">Mapa não configurado.</p>
                 )}
               </div>
-              <button onClick={() => setShowLocationModal(false)} className="w-full py-3.5 bg-[#121214] border border-white/5 hover:border-blue-500/50 hover:bg-[#18181b] text-white font-bold rounded-xl transition">
+              <button onClick={() => setShowLocationModal(false)} className="w-full py-3.5 bg-[#121214] border border-white/5 hover:border-blue-500/50 hover:bg-[#18181b] text-white font-bold text-sm rounded-xl transition">
                 Fechar
               </button>
             </div>
@@ -350,7 +339,7 @@ export default function Home() {
               <ReviewsSummary companyId={companyId} />
             </div>
             <div className="p-5 border-t border-white/5 shrink-0">
-              <button onClick={() => setShowReviewsModal(false)} className="w-full py-3.5 bg-[#121214] border border-white/5 hover:border-blue-500/50 hover:bg-[#18181b] text-white font-bold rounded-xl transition">
+              <button onClick={() => setShowReviewsModal(false)} className="w-full py-3.5 bg-[#121214] border border-white/5 hover:border-blue-500/50 hover:bg-[#18181b] text-white font-bold text-sm rounded-xl transition">
                 Voltar
               </button>
             </div>
@@ -422,7 +411,7 @@ export default function Home() {
                   <Check size={24} className="text-blue-400" />
                 </div>
                 <p className="text-blue-400 font-bold">{ratingSuccess}</p>
-                <button onClick={() => setRatingModal({ postId: 0, open: false })} className="mt-4 w-full py-3.5 bg-[#121214] hover:bg-[#18181b] border border-white/5 text-white rounded-xl transition">
+                <button onClick={() => setRatingModal({ postId: 0, open: false })} className="mt-4 w-full py-3.5 bg-[#121214] hover:bg-[#18181b] border border-white/5 text-white font-bold text-sm rounded-xl transition">
                   Fechar
                 </button>
               </div>
@@ -440,10 +429,10 @@ export default function Home() {
                   <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Ex: João" className="w-full bg-[#121214] border border-white/5 rounded-xl px-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setRatingModal({ postId: 0, open: false })} className="flex-1 py-3.5 bg-[#121214] border border-white/5 hover:bg-[#18181b] text-zinc-300 font-bold rounded-xl transition">
+                  <button onClick={() => setRatingModal({ postId: 0, open: false })} className="flex-1 py-3.5 bg-[#121214] border border-white/5 hover:bg-[#18181b] text-zinc-300 font-bold text-sm rounded-xl transition">
                     Cancelar
                   </button>
-                  <button onClick={handleSubmitRating} disabled={submittingRating || selectedRating === 0} className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold rounded-xl transition">
+                  <button onClick={handleSubmitRating} disabled={submittingRating || selectedRating === 0} className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold text-sm rounded-xl transition">
                     {submittingRating ? 'Enviando...' : 'Enviar'}
                   </button>
                 </div>

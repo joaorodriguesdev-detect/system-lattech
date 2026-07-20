@@ -194,6 +194,9 @@ def lookup_company(subdomain: str, db: Session = Depends(get_session)):
         "subscription_end": company.subscription_end,
         "subscription_id": company.subscription_id,
         "asaas_customer_id": company.asaas_customer_id,
+        "whatsapp_number": company.whatsapp_number,
+        "address": company.address,
+        "map_url": company.map_url
     }
 
 @router.get("/companies/{company_id}/banners")

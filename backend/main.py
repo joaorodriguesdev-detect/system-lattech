@@ -27,6 +27,9 @@ async def lifespan(app: FastAPI):
             session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS logo_url VARCHAR;"))
             session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS asaas_customer_id VARCHAR;"))
             session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS subscription_id VARCHAR;"))
+            session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS whatsapp_number VARCHAR;"))
+            session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS address VARCHAR;"))
+            session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS map_url VARCHAR;"))
             
             session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'TRIAL';"))
             session.exec(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP;"))

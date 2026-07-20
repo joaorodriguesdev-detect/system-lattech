@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, MapPin, Star, ChevronRight, X, Image as ImageIcon, Scissors, Zap, Check } from 'lucide-react';
+import { CalendarDays, MapPin, Star, ChevronRight, X, Image as ImageIcon, Scissors, Zap, Check, Instagram } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 // Seus componentes originais 
@@ -190,12 +190,12 @@ export default function Home() {
   }
 
   // ==========================================
-  // RENDERIZAÇÃO DA PÁGINA PRINCIPAL (PREMIUM UI MINIMALISTA)
+  // RENDERIZAÇÃO DA PÁGINA PRINCIPAL
   // ==========================================
   return (
     <div className="relative min-h-screen bg-[#050505] text-white font-sans overflow-hidden flex flex-col items-center">
       
-      {/* Background com Imagem e Overlay Premium */}
+      {/* Background com Imagem e Overlay */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-start justify-center">
         <div className="absolute inset-0 bg-[url('/imagens/fundoapp.png')] bg-cover bg-center bg-no-repeat opacity-60"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/30 via-[#050505]/70 to-[#050505]"></div>
@@ -204,19 +204,19 @@ export default function Home() {
 
       <div className="relative z-10 w-full max-w-md px-6 pt-16 pb-10 flex flex-col items-center min-h-screen">
         
-        {/* LOGO DA EMPRESA */}
-        <div className="relative w-24 h-24 mb-6">
+        {/* LOGO DA EMPRESA (Tamanho Aumentado) */}
+        <div className="relative w-32 h-32 mb-6">
           <div className="absolute inset-0 bg-blue-500/10 rounded-2xl blur-xl"></div>
           <div className="relative w-full h-full rounded-2xl border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-2xl">
             {companyLogo ? (
               <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-2" />
             ) : (
-              <Scissors size={28} className="text-zinc-700" />
+              <Scissors size={36} className="text-zinc-700" />
             )}
           </div>
         </div>
 
-        {/* NOME DA EMPRESA COM FONTE VINTAGE (RYE) */}
+        {/* NOME DA EMPRESA */}
         <div className="text-center mb-10 space-y-3">
           <h1 className="text-4xl font-[family-name:var(--font-rye)] tracking-widest text-white drop-shadow-md">
             {companyName}
@@ -226,10 +226,9 @@ export default function Home() {
           </p>
         </div>
 
-        {/* MENU DE OPÇÕES MINIMALISTA (TELA DO CELULAR OTIMIZADA) */}
+        {/* MENU DE OPÇÕES (CELULAR) */}
         <div className="w-full space-y-3.5">
           
-          {/* Botão Primário: Agendar */}
           <button 
             onClick={() => router.push('/agendamento')}
             className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 backdrop-blur-md transition-all duration-300 active:scale-[0.98] shadow-[0_0_15px_rgba(59,130,246,0.1)]"
@@ -241,7 +240,6 @@ export default function Home() {
             <ChevronRight className="text-blue-400/60 group-hover:text-blue-400 transition-colors" size={20} />
           </button>
 
-          {/* Botões Secundários: Minimalistas e com Menos Transparência */}
           <button 
             onClick={() => setShowPostsModal(true)}
             className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-md transition-all duration-300 active:scale-[0.98]"
@@ -277,13 +275,26 @@ export default function Home() {
 
         </div>
 
-        {/* Rodapé SaaS Minimalistaa */}
-        <footer className="mt-auto pt-16 flex flex-col items-center justify-center gap-2">
-          <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
-            <Zap size={12} className="text-blue-500" />
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest drop-shadow-md">Lattech Barber Pro</span>
+        {/* RODAPÉ (FOOTER) REFORMULADO */}
+        <footer className="mt-auto pt-16 flex flex-col items-center justify-center gap-4">
+          
+          {/* Link do Instagram da Barbearia */}
+          <a href="https://www.instagram.com/lattechapp/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-400 hover:text-white transition-all">
+            <Instagram size={18} />
+          </a>
+
+          {/* Assinatura LATTECH */}
+          <div className="flex flex-col items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1.5 text-zinc-400">
+               <span className="text-[10px] uppercase tracking-widest drop-shadow-md">Desenvolvido por</span>
+            </div>
+            <a href="https://lattech.com.br" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-500 hover:text-blue-400 transition-colors">
+              <Zap size={14} />
+              <span className="text-xs font-bold uppercase tracking-widest drop-shadow-md">LATTECH</span>
+            </a>
           </div>
         </footer>
+
       </div>
 
       {/* =========================================

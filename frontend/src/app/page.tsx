@@ -197,12 +197,12 @@ export default function Home() {
       
       {/* Background com Imagem e Overlay Premium */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-start justify-center">
-        {/* Imagem de Fundo (Ajustada para opacidade sutil) */}
-        <div className="absolute inset-0 bg-[url('/imagens/fundoapp.png')] bg-cover bg-center bg-no-repeat opacity-30"></div>
-        {/* Overlay Escuro para Legibilidade */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/50 via-[#050505]/80 to-[#050505]"></div>
+        {/* Imagem de Fundo com opacidade aumentada para ficar mais visível */}
+        <div className="absolute inset-0 bg-[url('/imagens/fundoapp.png')] bg-cover bg-center bg-no-repeat opacity-60"></div>
+        {/* Overlay Escuro (Clareado no topo, escuro na base) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/30 via-[#050505]/70 to-[#050505]"></div>
         {/* Glow Azul no topo */}
-        <div className="w-[400px] h-[400px] bg-blue-600/20 blur-[120px] rounded-full mt-[-100px] absolute"></div>
+        <div className="w-[400px] h-[400px] bg-blue-600/30 blur-[120px] rounded-full mt-[-100px] absolute"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md px-6 pt-16 pb-10 flex flex-col items-center min-h-screen">

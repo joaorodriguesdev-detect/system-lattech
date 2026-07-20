@@ -246,7 +246,7 @@ export default function Home() {
             <ChevronRight className="text-white/70 group-hover:text-white transition-colors" size={24} />
           </button>
 
-          {/* Botões Secundários: Clean Glassmorphism */}
+          {/* Botões Secundários: Clean Glassmorphismm */}
           <button 
             onClick={() => setShowPostsModal(true)}
             className="w-full group flex items-center justify-between p-4 rounded-xl bg-[#121214]/80 backdrop-blur-md border border-white/5 hover:border-blue-500/30 hover:bg-[#18181b]/90 transition-all duration-300 active:scale-[0.98]"

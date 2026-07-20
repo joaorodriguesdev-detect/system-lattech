@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
+// 🔥 Importando o novo componente
+import DailyAppointments from '../components/DailyAppointments';
+
 interface TopService {
   name: string;
   price: number;
@@ -116,8 +119,6 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
 
       {/* METRICS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-8 mt-2">
-        
-        {/* Card Faturamento */}
         <div className="xl:col-span-2 bg-[#121214] border border-white/[0.05] rounded-3xl p-6 relative overflow-hidden group flex flex-col justify-between shadow-lg">
           <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 blur-[60px] -mr-10 -mt-10 transition-all group-hover:bg-emerald-500/20"></div>
           <div className="flex items-center justify-between mb-2 relative z-10">
@@ -132,7 +133,6 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
             <h3 className="text-3xl font-extrabold text-white mb-1">R$ {metrics.revenue.toFixed(2)}</h3>
             <p className="text-xs text-zinc-500 font-medium">Líquido do período selecionado</p>
           </div>
-          {/* Gráfico decorativo */}
           <div className="mt-6 h-20 w-full relative z-10">
             <svg viewBox="0 0 200 60" className="w-full h-full overflow-visible" preserveAspectRatio="none">
               <defs>
@@ -194,6 +194,9 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
           <p className="text-xs text-zinc-500 font-medium">Volume total do período</p>
         </div>
       </div>
+
+      {/* 🔥 INSERINDO O NOVO COMPONENTE AQUI */}
+      <DailyAppointments token={token} />
 
       {/* TOP SERVICES + OVERVIEW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

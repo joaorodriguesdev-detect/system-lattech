@@ -1,6 +1,6 @@
 import uuid
 from datetime import date, datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 from sqlmodel import Session, select, func
 from pydantic import BaseModel
@@ -139,6 +139,61 @@ def get_dashboard_metrics(
         "pending_reviews": pending_reviews,
     }
 
+
+# ==========================================
+# ROTA DE AGENDAMENTOS DO DIA (NOVO)
+# ==========================================
+class DailyAppointmentResponse(BaseModel):
+    id: int
+    customer_name: str
+    service_name: str
+    barber_name: str
+    time: str
+    status: str
+
+@router.get("/dashboard/daily-appointments", response_model=List[DailyAppointmentResponse])
+def get_daily_appointments(
+    admin: User = Depends(get_current_admin_user),
+    session: Session = Depends(get_session)
+):
+    """Busca a agenda completa (00:00 às 23:59) do dia atual para a empresa logada."""
+    hoje = date.today()
+    start_dt = datetime.combine(hoje, datetime.min.time())
+    end_dt = datetime.combine(hoje, datetime.max.time())
+
+    # Realizando JOIN para obter os nomes do serviço e do barbeiro sem consultas extras
+    results = session.exec(
+        select(Appointment, Service.name, User.name)
+        .join(Service, Appointment.service_id == Service.id, isouter=True)
+        .join(User, Appointment.barber_id == User.id, isouter=True)
+        .where(
+            Appointment.company_id == admin.company_id,
+            Appointment.appointment_date >= start_dt,
+            Appointment.appointment_date <= end_dt
+        )
+        .order_by(Appointment.appointment_date.asc())
+    ).all()
+
+    daily_list = []
+    for appt, svc_name, barber_name in results:
+        # Pega a hora formatada
+        time_str = appt.appointment_date.strftime("%H:%M") if appt.appointment_date else "00:00"
+        
+        # Converte Enums se necessário
+        status_str = appt.status.value if hasattr(appt.status, 'value') else str(appt.status)
+
+        daily_list.append(DailyAppointmentResponse(
+            id=appt.id,
+            customer_name=appt.customer_name or "Cliente Padrão",
+            service_name=svc_name or "Serviço",
+            barber_name=barber_name or "Barbeiro",
+            time=time_str,
+            status=status_str
+        ))
+        
+    return daily_list
+
+
 # ==========================================
 # ROTAS DA EQUIPE (FUNCIONÁRIOS)
 # ==========================================
@@ -150,31 +205,6 @@ class BarberCreate(BaseModel):
 
 class AssignBarberUpdate(BaseModel):
     barber_id: int
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @router.post("/barbers")
 def create_barber(
@@ -308,14 +338,13 @@ def get_company_info(
         "trial_end": company.trial_end,
         "subscription_end": company.subscription_end,
         "dias_restantes": dias_restantes,
-        "address": company.address,  # 🔥 NOVO
+        "address": company.address,
         "map_url": company.map_url,
         "data_cadastro": company.data_cadastro,
-        "logo_url": company.logo_url, # 🔥 Envia a logo para o frontend exibir
-
+        "logo_url": company.logo_url, 
     }
 
-    # ==========================================
+# ==========================================
 # ROTAS DA VITRINE DE PRODUTOS
 # ==========================================
 from fastapi import Form
@@ -426,9 +455,8 @@ async def upload_company_banner(
                 detail="Limite máximo de 5 banners atingido. Remova um banner antes de adicionar outro."
             )
 
-                # 2. Lê o arquivo e faz upload para o Supabase dentro de uma pasta com o ID da empresa
+        # 2. Lê o arquivo e faz upload para o Supabase
         file_bytes = await file.read()
-        # 🔥 Path = pasta do company_id / nome original do arquivo
         file_path = f"{company_id}/{file.filename}"
         public_url = storage_service.upload_banner(file_bytes, file_path, file.content_type)
 
@@ -547,4 +575,3 @@ def update_company_location(
     session.add(company)
     session.commit()
     return {"ok": True, "message": "Localização atualizada com sucesso!"}
-

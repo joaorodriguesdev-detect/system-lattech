@@ -62,7 +62,7 @@ export default function SuperAdminLogin() {
             <ShieldAlert size={32} className="text-white relative z-10" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Acesso Restrito</h1>
-          <p className="text-sm text-zinc-500 mt-1 uppercase tracking-[0.2em] font-semibold">Ion Master Panel</p>
+          <p className="text-sm text-zinc-500 mt-1 uppercase tracking-[0.2em] font-semibold">Lattech Panel</p>
         </div>
 
         <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/[0.06] rounded-[2rem] shadow-2xl overflow-hidden relative">

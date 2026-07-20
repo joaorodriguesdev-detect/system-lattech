@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlmodel import Session, select
@@ -29,6 +30,11 @@ class ProvisionTenantRequest(BaseModel):
 class SuperAdminLoginRequest(BaseModel):
     email: str
     password: str
+
+# 🔥 NOVO: Modelo para receber os dados de atualização (PATCH)
+class UpdateTenantRequest(BaseModel):
+    name: Optional[str] = None
+    admin_password: Optional[str] = None
 
 # ==========================================
 # ROTA DE LOGIN DO SUPER ADMIN
@@ -158,6 +164,55 @@ def delete_company(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao excluir empresa: {str(e)}")
+
+
+# 🔥 NOVO: Rota PATCH para atualizar os dados do Tenant (Nome e Senha)
+@router.patch("/companies/{company_id}")
+def update_company(
+    company_id: int,
+    data: UpdateTenantRequest,
+    x_master_token: str = Header(None, description="Senha mestre do sistema"),
+    db: Session = Depends(get_session)
+):
+    """Atualiza o nome da empresa e/ou a senha do administrador principal."""
+    if x_master_token != MASTER_TOKEN:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token Mestre Inválido. Acesso Negado.")
+    
+    # 1. Busca e atualiza a Empresa
+    company = db.get(Company, company_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada.")
+    
+    if data.name:
+        company.name = data.name
+        db.add(company)
+
+    # 2. Busca e atualiza o Dono (Admin) da empresa, se uma nova senha for enviada
+    if data.admin_password:
+        admin_user = db.exec(
+            select(User)
+            .where(User.company_id == company_id)
+            .where(User.role == "admin")
+        ).first()
+        
+        if not admin_user:
+            raise HTTPException(status_code=404, detail="Administrador desta empresa não encontrado para atualizar a senha.")
+        
+        admin_user.hashed_password = get_password_hash(data.admin_password)
+        db.add(admin_user)
+
+    try:
+        db.commit()
+        db.refresh(company)
+        return {
+            "message": "Informações atualizadas com sucesso.",
+            "company_id": company.id,
+            "name": company.name
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar o inquilino: {str(e)}")
+
 
 @router.get("/companies")
 def list_all_companies(

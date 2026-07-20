@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   // Lógica do SuperAdmin
   if (host.includes("app.lattech.com.br") || host.includes("localhost")) {
     return {
-      title: "Ion Master Panel | SuperAdmin",
+      title: "Lattech App | Admin",
       description: "Painel de controle orbital e gerenciamento de assinaturas.",
       robots: "noindex, nofollow",
     };

@@ -140,9 +140,6 @@ def get_dashboard_metrics(
     }
 
 
-# ==========================================
-# ROTA DE AGENDAMENTOS DO DIA (NOVO)
-# ==========================================
 class DailyAppointmentResponse(BaseModel):
     id: int
     customer_name: str
@@ -153,15 +150,19 @@ class DailyAppointmentResponse(BaseModel):
 
 @router.get("/dashboard/daily-appointments", response_model=List[DailyAppointmentResponse])
 def get_daily_appointments(
+    date: str | None = Query(default=None, description="Data no formato YYYY-MM-DD"),
     admin: User = Depends(get_current_admin_user),
     session: Session = Depends(get_session)
 ):
-    """Busca a agenda completa (00:00 às 23:59) do dia atual para a empresa logada."""
-    hoje = date.today()
-    start_dt = datetime.combine(hoje, datetime.min.time())
-    end_dt = datetime.combine(hoje, datetime.max.time())
+    """Busca a agenda do dia especificado (ou hoje) para a empresa logada."""
+    if date:
+        target_date = datetime.strptime(date, "%Y-%m-%d").date()
+    else:
+        target_date = datetime.now().date()
 
-    # Realizando JOIN para obter os nomes do serviço e do barbeiro sem consultas extras
+    start_dt = datetime.combine(target_date, datetime.min.time())
+    end_dt = datetime.combine(target_date, datetime.max.time())
+
     results = session.exec(
         select(Appointment, Service.name, User.name)
         .join(Service, Appointment.service_id == Service.id, isouter=True)
@@ -176,10 +177,7 @@ def get_daily_appointments(
 
     daily_list = []
     for appt, svc_name, barber_name in results:
-        # Pega a hora formatada
         time_str = appt.appointment_date.strftime("%H:%M") if appt.appointment_date else "00:00"
-        
-        # Converte Enums se necessário
         status_str = appt.status.value if hasattr(appt.status, 'value') else str(appt.status)
 
         daily_list.append(DailyAppointmentResponse(

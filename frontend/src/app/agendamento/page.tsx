@@ -36,6 +36,9 @@ export default function AgendamentoPage() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   
+  // ==========================================
+  // ESTADOS DE DADOS
+  // ==========================================
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +50,9 @@ export default function AgendamentoPage() {
   const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  // ==========================================
+  // ESTADOS DO CARRINHO E CHECKOUT
+  // ==========================================
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -59,9 +65,11 @@ export default function AgendamentoPage() {
   const [sucesso, setSucesso] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState('');
 
+  // ==========================================
+  // INICIALIZAÇÃO E FETCHES
+  // ==========================================
   useEffect(() => {
     setIsMounted(true);
-    
     const hostname = window.location.hostname;
     let sub = 'mariobarber'; 
     
@@ -111,13 +119,15 @@ export default function AgendamentoPage() {
       });
   }, [companyId]);
 
+  // 🔥 Efeito que busca os horários ocupados da API
   useEffect(() => {
     if (!data || !companyId) return;
 
     const fetchOccupiedSlots = async () => {
       setLoadingSlots(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/appointments/occupied-slots?company_id=${companyId}&date=${data}`);
+        const cleanDate = data.split('T')[0];
+        const res = await fetch(`${API_BASE_URL}/appointments/occupied-slots?company_id=${companyId}&date=${cleanDate}`);
         if (res.ok) {
           const fetchedSlots = await res.json();
           setOccupiedSlots(fetchedSlots);
@@ -132,6 +142,9 @@ export default function AgendamentoPage() {
     fetchOccupiedSlots();
   }, [data, companyId]);
 
+  // ==========================================
+  // FUNÇÕES AUXILIARES
+  // ==========================================
   const gerarDatas = () => {
     const datas: { value: string; label: string }[] = [];
     const hoje = new Date();
@@ -177,6 +190,9 @@ export default function AgendamentoPage() {
 
   const cartTotal = cart.reduce((acc, item) => acc + item.price, 0);
 
+  // ==========================================
+  // SUBMISSÃO DO AGENDAMENTO
+  // ==========================================
   const handleConfirmar = async (e: FormEvent) => {
     e.preventDefault();
     
@@ -246,6 +262,9 @@ export default function AgendamentoPage() {
     }
   };
 
+  // ==========================================
+  // TELA DE SUCESSO
+  // ==========================================
   if (sucesso) {
     return (
       <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-6">
@@ -279,6 +298,9 @@ export default function AgendamentoPage() {
     );
   }
 
+  // ==========================================
+  // TELA PRINCIPAL (VITRINE & SERVIÇOS)
+  // ==========================================
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans pb-24 relative">
       

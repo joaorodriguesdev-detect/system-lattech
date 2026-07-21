@@ -117,15 +117,15 @@ export default function AgendamentoPage() {
       });
   }, [companyId]);
 
+  // 🔥 1. CORREÇÃO: Puxar horários usando a data bruta local sem o toISOString() que adicionava fuso horário
   useEffect(() => {
     if (!data || !companyId) return;
 
     const fetchOccupiedSlots = async () => {
       setLoadingSlots(true);
       try {
-        const dateParam = new Date(data).toISOString().split('T')[0];
-        
-        const res = await fetch(`${API_BASE_URL}/appointments/occupied-slots?company_id=${companyId}&date=${dateParam}`);
+        // 'data' já está no formato puro YYYY-MM-DD
+        const res = await fetch(`${API_BASE_URL}/appointments/occupied-slots?company_id=${companyId}&date=${data}`);
         if (res.ok) {
           const fetchedSlots = await res.json();
           setOccupiedSlots(fetchedSlots);
@@ -143,15 +143,27 @@ export default function AgendamentoPage() {
   // ==========================================
   // FUNÇÕES AUXILIARES
   // ==========================================
+  
+  // 🔥 2. CORREÇÃO: Começar de 0 para incluir o "Hoje" e usar formatação manual para impedir alteração de timezone
   const gerarDatas = () => {
     const datas: { value: string; label: string }[] = [];
     const hoje = new Date();
-    for (let i = 1; i <= 14; i++) {
+    
+    for (let i = 0; i <= 14; i++) {
       const d = new Date(hoje);
       d.setDate(d.getDate() + i);
-      if (d.getDay() !== 0) {
-        const value = d.toISOString().split('T')[0];
-        const label = d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+      if (d.getDay() !== 0) { // Pula domingo
+        
+        // Montagem manual para garantir que seja a data local correta
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const value = `${year}-${month}-${day}`;
+        
+        const label = i === 0 
+          ? 'Hoje' 
+          : d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+          
         datas.push({ value, label });
       }
     }
@@ -199,7 +211,9 @@ export default function AgendamentoPage() {
     }
 
     setEnviando(true);
-    const appointmentDate = new Date(`${data}T${hora}:00`);
+    
+    // 🔥 3. CORREÇÃO: Enviamos a string perfeita sem usar "new Date().toISOString()" para blindar o backend do UTC
+    const appointmentDateLocal = `${data}T${hora}:00`;
     
     let notesText = `Agendamento via app (Carrinho).`;
     if (cartServices.length > 1) {
@@ -216,7 +230,7 @@ export default function AgendamentoPage() {
         body: JSON.stringify({
           company_id: companyId,
           service_id: cartServices[0].id, 
-          appointment_date: appointmentDate.toISOString(),
+          appointment_date: appointmentDateLocal, // Aqui vai a string garantida
           customer_name: nome,
           customer_phone: telefone,
           notes: notesText,

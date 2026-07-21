@@ -42,7 +42,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, sidebarOpen, set
             <div>
               <h1 className="text-white text-xl font-extrabold tracking-wide flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.6)]"></div>
-               LAT System
+               Lattech Barber Pro
               </h1>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Admin Workspace</p>
             </div>

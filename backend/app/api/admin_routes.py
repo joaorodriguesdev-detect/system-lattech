@@ -553,11 +553,12 @@ def update_barber_commission(
     return {"ok": True, "commission_value": barber.commission_value}
 
 # ==========================================
-# ROTA DE LOCALIZAÇÃO (MAPA)
+# ROTA DE LOCALIZAÇÃO E CONTATO (MAPA + WHATSAPP)
 # ==========================================
 class CompanyLocationUpdate(BaseModel):
     address: str | None = None
     map_url: str | None = None
+    whatsapp_number: str | None = None # 🔥 CAMPO ADICIONADO AQUI!
 
 @router.put("/company/location")
 def update_company_location(
@@ -572,6 +573,12 @@ def update_company_location(
     company.address = data.address
     company.map_url = data.map_url
     
+    # 🔥 Salvando o número no banco de dados!
+    if data.whatsapp_number is not None:
+        # Aqui podemos aplicar uma limpeza (opcional) para garantir que só salve números
+        clean_number = "".join(c for c in data.whatsapp_number if c.isdigit())
+        company.whatsapp_number = clean_number
+    
     session.add(company)
     session.commit()
-    return {"ok": True, "message": "Localização atualizada com sucesso!"}
+    return {"ok": True, "message": "Localização e contato atualizados com sucesso!"}

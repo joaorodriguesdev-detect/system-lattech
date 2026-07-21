@@ -23,7 +23,14 @@ export default function DailyAppointments({ token }: DailyAppointmentsProps) {
 
   const fetchDailyAppointments = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/dashboard/daily-appointments`, {
+      // Pega a data local exata do navegador do usuário (YYYY-MM-DD)
+      const hojeLocal = new Date();
+      const year = hojeLocal.getFullYear();
+      const month = String(hojeLocal.getMonth() + 1).padStart(2, '0');
+      const day = String(hojeLocal.getDate()).padStart(2, '0');
+      const dataFormatada = `${year}-${month}-${day}`;
+
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard/daily-appointments?date=${dataFormatada}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -39,12 +46,11 @@ export default function DailyAppointments({ token }: DailyAppointmentsProps) {
 
   useEffect(() => {
     fetchDailyAppointments();
-    const interval = setInterval(fetchDailyAppointments, 30000); // Atualiza a cada 30 segundos
+    const interval = setInterval(fetchDailyAppointments, 30000);
     return () => clearInterval(interval);
   }, [token]);
 
-  // Identificador da Data de Hoje para o Front
-  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const hojeExibicao = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   if (loading) {
     return (
@@ -63,7 +69,7 @@ export default function DailyAppointments({ token }: DailyAppointmentsProps) {
           </div>
           <div>
             <h2 className="text-white text-lg font-bold tracking-tight">Atendimentos para Hoje!</h2>
-            <p className="text-zinc-400 text-xs font-medium capitalize">{hoje}</p>
+            <p className="text-zinc-400 text-xs font-medium capitalize">{hojeExibicao}</p>
           </div>
         </div>
         {appointments.length > 0 && (

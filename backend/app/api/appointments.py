@@ -143,19 +143,31 @@ def list_appointments(
     ).order_by(Appointment.appointment_date.desc())
     return statement.all()
 
-@router.get("/occupied-slots", response_model=List[datetime])
+@router.get("/occupied-slots")
 def get_occupied_slots_route(
-    barber_id: int = Query(..., description="ID do barbeiro"),
-    date: date = Query(..., description="Data para verificar (YYYY-MM-DD)"),
-    session: Session = Depends(get_session),
-    company: Company = Depends(get_current_company),
+    company_id: int = Query(...),
+    date_str: str = Query(..., alias="date", description="Formato YYYY-MM-DD"),
+    session: Session = Depends(get_session)
 ):
-    occupied = get_occupied_slots(session, company.id, barber_id, date)
-    return occupied
+    """Retorna um array de strings com os horários 'HH:MM' já ocupados."""
+    target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    start_dt = datetime.combine(target_date, datetime.min.time())
+    end_dt = datetime.combine(target_date, datetime.max.time())
 
-class StatusUpdate(BaseModel):
-    """Schema para atualizar status do agendamento."""
-    status: AppointmentStatus
+    # Busca apenas as datas/horas dos agendamentos ativos
+    appointments = session.exec(
+        select(Appointment.appointment_date)
+        .where(
+            Appointment.company_id == company_id,
+            Appointment.appointment_date >= start_dt,
+            Appointment.appointment_date <= end_dt,
+            Appointment.status != AppointmentStatus.CANCELED  # Libera se foi cancelado
+        )
+    ).all()
+
+    # Formata a saída para o React comparar facilmente
+    occupied_times = [appt.strftime("%H:%M") for appt in appointments]
+    return occupied_times
 
 @router.patch("/{appointment_id}/status", response_model=AppointmentResponse)
 def update_appointment_status_route(

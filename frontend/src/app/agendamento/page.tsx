@@ -46,6 +46,8 @@ export default function AgendamentoPage() {
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [companyPhone, setCompanyPhone] = useState<string>(''); 
   const [companyName, setCompanyName] = useState<string>('');
+  const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   // ==========================================
   // ESTADOS DO CARRINHO E CHECKOUT
@@ -63,7 +65,7 @@ export default function AgendamentoPage() {
   const [whatsappLink, setWhatsappLink] = useState('');
 
   // ==========================================
-  // INICIALIZAÇÃO (Lógica de Subdomínio)
+  // INICIALIZAÇÃO E FETCHES
   // ==========================================
   useEffect(() => {
     const hostname = window.location.hostname;
@@ -98,11 +100,9 @@ export default function AgendamentoPage() {
 
     setLoading(true);
     
-    // Busca Serviços
     const fetchServices = fetch(`${API_BASE_URL}/services/?company_id=${companyId}`)
       .then(res => res.ok ? res.json() : []);
       
-    // Busca Produtos
     const fetchProducts = fetch(`${API_BASE_URL}/products/?company_id=${companyId}`)
       .then(res => res.ok ? res.json() : []);
 
@@ -116,6 +116,29 @@ export default function AgendamentoPage() {
         setLoading(false);
       });
   }, [companyId]);
+
+  useEffect(() => {
+    if (!data || !companyId) return;
+
+    const fetchOccupiedSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const dateParam = new Date(data).toISOString().split('T')[0];
+        
+        const res = await fetch(`${API_BASE_URL}/appointments/occupied-slots?company_id=${companyId}&date=${dateParam}`);
+        if (res.ok) {
+          const fetchedSlots = await res.json();
+          setOccupiedSlots(fetchedSlots);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar disponibilidade:", error);
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+
+    fetchOccupiedSlots();
+  }, [data, companyId]);
 
   // ==========================================
   // FUNÇÕES AUXILIARES
@@ -135,13 +158,9 @@ export default function AgendamentoPage() {
     return datas;
   };
 
-  const gerarHorarios = () => {
-    const horarios: string[] = [];
-    for (let h = 8; h <= 17; h++) {
-      horarios.push(`${String(h).padStart(2, '0')}:00`);
-      if (h < 17) horarios.push(`${String(h).padStart(2, '0')}:30`);
-    }
-    return horarios;
+  const getAvailableTimeSlots = () => {
+    const allTimeSlots = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"];
+    return allTimeSlots.filter(time => !occupiedSlots.includes(time));
   };
 
   const toggleCartItem = (item: CartItem) => {
@@ -161,7 +180,7 @@ export default function AgendamentoPage() {
   const cartTotal = cart.reduce((acc, item) => acc + item.price, 0);
 
   // ==========================================
-  // SUBMISSÃO DO AGENDAMENTO (CARRINHO)
+  // SUBMISSÃO DO AGENDAMENTO
   // ==========================================
   const handleConfirmar = async (e: FormEvent) => {
     e.preventDefault();
@@ -182,7 +201,6 @@ export default function AgendamentoPage() {
     setEnviando(true);
     const appointmentDate = new Date(`${data}T${hora}:00`);
     
-    // Constrói as anotações detalhadas para o banco de dados
     let notesText = `Agendamento via app (Carrinho).`;
     if (cartServices.length > 1) {
       notesText += `\nServiços extras: ${cartServices.slice(1).map(s => s.name).join(', ')}.`;
@@ -192,7 +210,6 @@ export default function AgendamentoPage() {
     }
 
     try {
-      // API exige um service_id. Mandamos o primeiro do carrinho.
       const res = await fetch(`${API_BASE_URL}/appointments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -217,7 +234,6 @@ export default function AgendamentoPage() {
         
         msg += `\n💰 *Total a pagar:* R$ ${cartTotal.toFixed(2)}\n\n✅ Aguardando aprovação no painel!`;
 
-        // 🔥 CORREÇÃO: Usando estritamente o número cadastrado da empresa. Sem o seu número como fallback!
         const numDestino = companyPhone ? companyPhone : ''; 
         setWhatsappLink(`https://wa.me/${numDestino}?text=${encodeURIComponent(msg)}`);
         
@@ -291,7 +307,7 @@ export default function AgendamentoPage() {
 
       <div className="p-4 space-y-6 max-w-2xl mx-auto">
         
-        {/* ABAS (TABS) */}
+        {/* ABAS */}
         <div className="flex p-1 bg-[#121214] border border-white/5 rounded-xl">
           <button 
             onClick={() => setActiveTab('services')}
@@ -497,31 +513,54 @@ export default function AgendamentoPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Data</label>
-                      <div className="relative">
-                        <CalendarDays size={16} className="absolute left-3 top-3.5 text-zinc-500 pointer-events-none" />
-                        <select required value={data} onChange={(e) => setData(e.target.value)} 
-                          className="w-full bg-[#121214] border border-white/5 rounded-xl pl-9 pr-2 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition appearance-none cursor-pointer">
-                          <option value="">Selecione</option>
-                          {gerarDatas().map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Horário</label>
-                      <div className="relative">
-                        <Clock size={16} className="absolute left-3 top-3.5 text-zinc-500 pointer-events-none" />
-                        <select required value={hora} onChange={(e) => setHora(e.target.value)} 
-                          className="w-full bg-[#121214] border border-white/5 rounded-xl pl-9 pr-2 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition appearance-none cursor-pointer">
-                          <option value="">Selecione</option>
-                          {gerarHorarios().map((h) => <option key={h} value={h}>{h}</option>)}
-                        </select>
-                      </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Data</label>
+                    <div className="relative">
+                      <CalendarDays size={16} className="absolute left-3 top-3.5 text-zinc-500 pointer-events-none" />
+                      <select required value={data} onChange={(e) => {
+                          setData(e.target.value);
+                          setHora(''); 
+                        }} 
+                        className="w-full bg-[#121214] border border-white/5 rounded-xl pl-9 pr-2 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition appearance-none cursor-pointer">
+                        <option value="">Selecione a data</option>
+                        {gerarDatas().map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      </select>
                     </div>
                   </div>
+
+                  {data && (
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Horário Disponível</label>
+                      {loadingSlots ? (
+                        <div className="text-zinc-500 text-sm flex items-center gap-2">
+                           <span className="w-4 h-4 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" /> 
+                           Verificando agenda...
+                        </div>
+                      ) : getAvailableTimeSlots().length === 0 ? (
+                        <div className="text-amber-500 text-sm font-bold bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
+                          Agenda esgotada para este dia!
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-2">
+                          {getAvailableTimeSlots().map((time) => (
+                            <button 
+                              key={time}
+                              type="button"
+                              onClick={() => setHora(time)}
+                              className={`p-2 rounded-xl border text-sm transition-all ${
+                                hora === time 
+                                  ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.4)]' 
+                                  : 'border-white/10 text-zinc-300 hover:bg-white/10'
+                              }`}
+                            >
+                              {time}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               </form>
 
@@ -532,7 +571,7 @@ export default function AgendamentoPage() {
               <button
                 type="submit"
                 form="checkout-form"
-                disabled={enviando}
+                disabled={enviando || !hora}
                 className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
               >
                 {enviando ? (

@@ -1,5 +1,4 @@
-# backend/app/api/appointments.py
-from datetime import datetime, date
+from datetime import datetime
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select
@@ -9,7 +8,6 @@ from app.core.database import get_session
 from app.core.security import get_current_company
 from app.models import Appointment, AppointmentStatus, Company, User
 
-# Removemos temporariamente as validações estritas de create_appointment
 from app.services.appointment_service import (
     get_appointments_by_customer,
     get_appointments_by_barber,
@@ -20,7 +18,6 @@ from app.services.appointment_service import (
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
 class AppointmentCreate(BaseModel):
-    """Schema atualizado para receber dados da tela PÚBLICA do cliente."""
     company_id: int
     service_id: int
     appointment_date: datetime
@@ -29,7 +26,6 @@ class AppointmentCreate(BaseModel):
     notes: str | None = None
 
 class AppointmentResponse(BaseModel):
-    """Schema de resposta de um agendamento."""
     id: int
     customer_id: int
     barber_id: int
@@ -42,21 +38,16 @@ class AppointmentResponse(BaseModel):
     class Config:
         from_attributes = True
 
-@router.post(
-    "",
-    response_model=AppointmentResponse,
-    status_code=status.HTTP_201_CREATED,
-)
+# Mock da classe StatusUpdate caso esteja importada de outro lugar no seu código original
+class StatusUpdate(BaseModel):
+    status: AppointmentStatus
+
+@router.post("", response_model=AppointmentResponse, status_code=status.HTTP_201_CREATED)
 def create_appointment_route(
     appointment_data: AppointmentCreate,
     session: Session = Depends(get_session),
 ):
-    """
-    Cria um novo agendamento público.
-    Acha/Cria o cliente automaticamente, verifica choque de horários e vincula ao barbeiro.
-    """
     try:
-        # 1. Acha o barbeiro (Admin) dono da barbearia
         barber = session.exec(
             select(User).where(
                 User.company_id == appointment_data.company_id,
@@ -67,19 +58,20 @@ def create_appointment_route(
         if not barber:
             raise ValueError("Nenhum barbeiro encontrado para esta barbearia.")
 
-        # 🚨 2. O LEÃO DE CHÁCARA: Verifica se o horário já está ocupado! 🚨
+        # 🚨 Validação robusta de overbooking
         horario_ocupado = session.exec(
             select(Appointment).where(
                 Appointment.barber_id == barber.id,
-                Appointment.appointment_date == appointment_data.appointment_date,
-                Appointment.status.in_([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED])
+                Appointment.appointment_date == appointment_data.appointment_date
             )
-        ).first()
+        ).all()
 
-        if horario_ocupado:
-            raise ValueError("Putz! Esse horário acabou de ser reservado por outra pessoa. Por favor, escolha outro.")
+        # Verifica na memória para evitar falhas do SQL com Enum
+        for appt in horario_ocupado:
+            status_str = appt.status.value.lower() if hasattr(appt.status, 'value') else str(appt.status).lower()
+            if status_str in ['pending', 'confirmed', 'completed']:
+                raise ValueError("Putz! Esse horário acabou de ser reservado por outra pessoa. Por favor, escolha outro.")
 
-        # 3. Verifica se o cliente já existe pelo telefone, senão cria um novo
         customer = session.exec(
             select(User).where(
                 User.company_id == appointment_data.company_id,
@@ -101,14 +93,13 @@ def create_appointment_route(
             session.commit()
             session.refresh(customer)
 
-        # 4. CRIA O AGENDAMENTO DIRETO NO BANCO
         new_appointment = Appointment(
             company_id=appointment_data.company_id,
             customer_id=customer.id,
             barber_id=barber.id,
             service_id=appointment_data.service_id,
             appointment_date=appointment_data.appointment_date,
-            status=AppointmentStatus.PENDING, # Já cai como pendente lá pro Admin aprovar
+            status=AppointmentStatus.PENDING,
             notes=f"Cliente: {appointment_data.customer_name} | {appointment_data.notes or ''}",
         )
         
@@ -120,19 +111,16 @@ def create_appointment_route(
         
     except Exception as e:
         session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 
 @router.get("", response_model=list[AppointmentResponse])
 def list_appointments(
-    customer_id: int | None = Query(None, description="Filtrar por cliente"),
-    barber_id: int | None = Query(None, description="Filtrar por barbeiro"),
+    customer_id: int | None = Query(None),
+    barber_id: int | None = Query(None),
     session: Session = Depends(get_session),
     company: Company = Depends(get_current_company),
 ):
-    """Lista agendamentos para o Painel Admin (Protegido por Token)"""
     if customer_id:
         return get_appointments_by_customer(session, company.id, customer_id)
     if barber_id:
@@ -143,19 +131,40 @@ def list_appointments(
     ).order_by(Appointment.appointment_date.desc())
     return statement.all()
 
-@router.get("/occupied-slots", response_model=List[datetime])
-def get_occupied_slots_route(
-    barber_id: int = Query(..., description="ID do barbeiro"),
-    date: date = Query(..., description="Data para verificar (YYYY-MM-DD)"),
-    session: Session = Depends(get_session),
-    company: Company = Depends(get_current_company),
-):
-    occupied = get_occupied_slots(session, company.id, barber_id, date)
-    return occupied
 
-class StatusUpdate(BaseModel):
-    """Schema para atualizar status do agendamento."""
-    status: AppointmentStatus
+@router.get("/occupied-slots")
+def get_occupied_slots_route(
+    company_id: int = Query(...),
+    date_str: str = Query(..., alias="date", description="Formato YYYY-MM-DD"),
+    session: Session = Depends(get_session)
+):
+    """Retorna horários ocupados resolvendo bugs de timezone e Enum do banco."""
+    target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    start_dt = datetime.combine(target_date, datetime.min.time())
+    end_dt = datetime.combine(target_date, datetime.max.time())
+
+    # Seleciona o objeto inteiro para evitar que o SQLAlchemy retorne tuplas quebradas
+    appointments = session.exec(
+        select(Appointment)
+        .where(
+            Appointment.company_id == company_id,
+            Appointment.appointment_date >= start_dt,
+            Appointment.appointment_date <= end_dt
+        )
+    ).all()
+
+    occupied_times = []
+    for appt in appointments:
+        # Filtra o status manualmente para garantir 100% de precisão (ignora cancelados)
+        status_str = appt.status.value.lower() if hasattr(appt.status, 'value') else str(appt.status).lower()
+        
+        if status_str != 'canceled':
+            if appt.appointment_date:
+                # Extrai apenas a hora e minuto formatado perfeitamente
+                occupied_times.append(appt.appointment_date.strftime("%H:%M"))
+
+    return occupied_times
+
 
 @router.patch("/{appointment_id}/status", response_model=AppointmentResponse)
 def update_appointment_status_route(
@@ -173,7 +182,4 @@ def update_appointment_status_route(
         )
         return appointment
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

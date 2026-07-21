@@ -300,7 +300,7 @@ async def update_company_logo(
         raise HTTPException(status_code=500, detail="Erro interno ao salvar a logo.")
 
 # ==========================================
-# ROTA DO PLANO / LICENÇA
+# ROTA DO PLANO / LICENÇA E INFORMAÇÕES DA EMPRESA
 # ==========================================
 
 @router.get("/company")
@@ -342,6 +342,7 @@ def get_company_info(
         "map_url": company.map_url,
         "data_cadastro": company.data_cadastro,
         "logo_url": company.logo_url, 
+        "whatsapp_number": company.whatsapp_number, 
     }
 
 # ==========================================

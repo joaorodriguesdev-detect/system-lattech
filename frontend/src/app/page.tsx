@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CalendarDays, MapPin, Star, ChevronRight, X, Image as ImageIcon, Scissors, Zap, Check } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
-// Seus componentes originaiss
+// Seus componentes originais
 import ReviewsSummary from '../components/ReviewsSummary';
 
 interface Post {
@@ -25,8 +25,6 @@ interface PostReview {
 }
 
 export default function Home() {
-  const router = useRouter();
-
   // ==========================================
   // ESTADOS
   // ==========================================
@@ -40,13 +38,6 @@ export default function Home() {
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [companyAddress, setCompanyAddress] = useState<string | null>(null);
   const [companyMapUrl, setCompanyMapUrl] = useState<string | null>(null);
-
-  // Estados de Avaliação
-  const [ratingModal, setRatingModal] = useState<{ postId: number; open: boolean }>({ postId: 0, open: false });
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [customerName, setCustomerName] = useState('');
-  const [submittingRating, setSubmittingRating] = useState(false);
-  const [ratingSuccess, setRatingSuccess] = useState('');
 
   // Estados dos Modais UI
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -124,46 +115,6 @@ export default function Home() {
       });
   }, [companyId, companyStatus]);
 
-  const handleOpenRating = (postId: number) => {
-    setRatingModal({ postId, open: true });
-    setSelectedRating(0);
-    setCustomerName('');
-    setRatingSuccess('');
-  };
-
-  const handleSubmitRating = async () => {
-    if (selectedRating === 0) {
-      alert('Selecione uma nota de 1 a 5 estrelas.');
-      return;
-    }
-    const name = customerName.trim() || 'Anônimo';
-    setSubmittingRating(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/post-reviews/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          post_id: ratingModal.postId,
-          customer_name: name,
-          rating: selectedRating,
-          company_id: companyId 
-        }),
-      });
-      if (res.ok) {
-        setRatingSuccess('Avaliação enviada para aprovação! ⭐');
-        setSelectedRating(0);
-        setCustomerName('');
-      } else {
-        const err = await res.json();
-        alert(err.detail || 'Erro ao enviar avaliação.');
-      }
-    } catch {
-      alert('Erro de conexão com o servidor.');
-    } finally {
-      setSubmittingRating(false);
-    }
-  };
-
   // ==========================================
   // TELA DE SUSPENSÃO
   // ==========================================
@@ -204,7 +155,7 @@ export default function Home() {
 
       <div className="relative z-10 w-full max-w-md px-6 pt-16 pb-10 flex flex-col items-center min-h-screen">
         
-        {/* LOGO DA EMPRESA (Tamanho Aumentado) */}
+        {/* LOGO DA EMPRESA */}
         <div className="relative w-32 h-32 mb-6">
           <div className="absolute inset-0 bg-blue-500/10 rounded-2xl blur-xl"></div>
           <div className="relative w-full h-full rounded-2xl border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-2xl">
@@ -216,7 +167,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* NOME DA EMPRESA */}
+        {/* NOME DA EMPRESA COM FONTE VINTAGE (RYE) */}
         <div className="text-center mb-10 space-y-3">
           <h1 className="text-4xl font-[family-name:var(--font-rye)] tracking-widest text-white drop-shadow-md">
             {companyName}
@@ -226,11 +177,12 @@ export default function Home() {
           </p>
         </div>
 
-        {/* MENU DE OPÇÕES (CELULAR) */}
+        {/* MENU DE OPÇÕES */}
         <div className="w-full space-y-3.5">
           
-          <button 
-            onClick={() => router.push('/agendamento')}
+          {/* BOTÃO CORRIGIDO PARA USAR <Link> DO NEXT.JS */}
+          <Link 
+            href="/agendamento"
             className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 backdrop-blur-md transition-all duration-300 active:scale-[0.98] shadow-[0_0_15px_rgba(59,130,246,0.1)]"
           >
             <div className="flex items-center gap-3.5">
@@ -238,7 +190,7 @@ export default function Home() {
               <span className="font-bold text-blue-400 text-base tracking-wide">Agendar Horário</span>
             </div>
             <ChevronRight className="text-blue-400/60 group-hover:text-blue-400 transition-colors" size={20} />
-          </button>
+          </Link>
 
           <button 
             onClick={() => setShowPostsModal(true)}
@@ -278,7 +230,7 @@ export default function Home() {
         {/* RODAPÉ (FOOTER) REFORMULADO */}
         <footer className="mt-auto pt-16 flex flex-col items-center justify-center gap-4">
           
-          {/* Link do Instagram da Barbearia */}
+          {/* SVG Nativo do Instagram para evitar erro de exportação do lucide-react antigo */}
           <a href="https://www.instagram.com/lattechapp/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-400 hover:text-white transition-all" aria-label="Instagram">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
@@ -287,7 +239,6 @@ export default function Home() {
             </svg>
           </a>
 
-          {/* Assinatura LATTECH */}
           <div className="flex flex-col items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
             <div className="flex items-center gap-1.5 text-zinc-400">
                <span className="text-[10px] uppercase tracking-widest drop-shadow-md">Desenvolvido por</span>
@@ -399,60 +350,11 @@ export default function Home() {
                         )}
                         {post.caption && <p className="text-sm leading-relaxed text-zinc-300">{post.caption}</p>}
                       </div>
-                      <button onClick={() => handleOpenRating(post.id)} className="w-full mt-3 py-2.5 bg-white/5 hover:bg-blue-600/10 text-xs font-bold uppercase text-zinc-400 hover:text-blue-400 border border-white/5 rounded-xl transition-all duration-300">
-                        Avaliar Corte
-                      </button>
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================
-          MODAL DE AVALIAÇÃO DO CORTE
-      ========================================= */}
-      {ratingModal.open && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 md:p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-bold text-white mb-2 text-center">Avaliar Corte</h3>
-            <p className="text-sm text-zinc-400 text-center mb-6">Deixe sua nota para este trabalho</p>
-            
-            {ratingSuccess ? (
-              <div className="text-center space-y-4">
-                <div className="w-14 h-14 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
-                  <Check size={24} className="text-blue-400" />
-                </div>
-                <p className="text-blue-400 font-bold">{ratingSuccess}</p>
-                <button onClick={() => setRatingModal({ postId: 0, open: false })} className="mt-4 w-full py-3.5 bg-[#121214] hover:bg-[#18181b] border border-white/5 text-white font-bold text-sm rounded-xl transition">
-                  Fechar
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex justify-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button key={star} onClick={() => setSelectedRating(star)} className={`p-2 transition-transform hover:scale-110 ${selectedRating >= star ? 'text-amber-400' : 'text-zinc-700'}`}>
-                      <Star size={32} fill={selectedRating >= star ? 'currentColor' : 'none'} />
-                    </button>
-                  ))}
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Seu Nome (Opcional)</label>
-                  <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Ex: João" className="w-full bg-[#121214] border border-white/5 rounded-xl px-4 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition" />
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setRatingModal({ postId: 0, open: false })} className="flex-1 py-3.5 bg-[#121214] border border-white/5 hover:bg-[#18181b] text-zinc-300 font-bold text-sm rounded-xl transition">
-                    Cancelar
-                  </button>
-                  <button onClick={handleSubmitRating} disabled={submittingRating || selectedRating === 0} className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold text-sm rounded-xl transition">
-                    {submittingRating ? 'Enviando...' : 'Enviar'}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

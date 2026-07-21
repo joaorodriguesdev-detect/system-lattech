@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional, List
 from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 from sqlmodel import Session, select, func
+from sqlalchemy.orm import aliased
 from pydantic import BaseModel
 
 from app.core.database import get_session
@@ -163,10 +164,13 @@ def get_daily_appointments(
     start_dt = datetime.combine(target_date, datetime.min.time())
     end_dt = datetime.combine(target_date, datetime.max.time())
 
+    CustomerUser = aliased(User)
+
     results = session.exec(
-        select(Appointment, Service.name, User.name)
+        select(Appointment, Service.name, User.name, CustomerUser.name)
         .join(Service, Appointment.service_id == Service.id, isouter=True)
         .join(User, Appointment.barber_id == User.id, isouter=True)
+        .join(CustomerUser, Appointment.customer_id == CustomerUser.id, isouter=True)
         .where(
             Appointment.company_id == admin.company_id,
             Appointment.appointment_date >= start_dt,
@@ -176,13 +180,13 @@ def get_daily_appointments(
     ).all()
 
     daily_list = []
-    for appt, svc_name, barber_name in results:
+    for appt, svc_name, barber_name, customer_name in results:
         time_str = appt.appointment_date.strftime("%H:%M") if appt.appointment_date else "00:00"
         status_str = appt.status.value if hasattr(appt.status, 'value') else str(appt.status)
 
         daily_list.append(DailyAppointmentResponse(
             id=appt.id,
-            customer_name=appt.customer_name or "Cliente Padrão",
+            customer_name=customer_name or "Cliente Padrão",
             service_name=svc_name or "Serviço",
             barber_name=barber_name or "Barbeiro",
             time=time_str,

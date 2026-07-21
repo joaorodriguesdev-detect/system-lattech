@@ -34,10 +34,8 @@ interface CartItem {
 
 export default function AgendamentoPage() {
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
   
-  // ==========================================
-  // ESTADOS DE DADOS
-  // ==========================================
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,9 +47,6 @@ export default function AgendamentoPage() {
   const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // ==========================================
-  // ESTADOS DO CARRINHO E CHECKOUT
-  // ==========================================
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -64,10 +59,9 @@ export default function AgendamentoPage() {
   const [sucesso, setSucesso] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState('');
 
-  // ==========================================
-  // INICIALIZAÇÃO E FETCHES
-  // ==========================================
   useEffect(() => {
+    setIsMounted(true);
+    
     const hostname = window.location.hostname;
     let sub = 'mariobarber'; 
     
@@ -82,11 +76,11 @@ export default function AgendamentoPage() {
         if (!res.ok) throw new Error("Empresa não encontrada");
         return res.json();
       })
-      .then(data => {
-        setCompanyId(data.id); 
-        if (data.name) setCompanyName(data.name);
-        if (data.whatsapp_number) {
-            setCompanyPhone(data.whatsapp_number.replace(/\D/g, ''));
+      .then(apiData => {
+        setCompanyId(apiData.id); 
+        if (apiData.name) setCompanyName(apiData.name);
+        if (apiData.whatsapp_number) {
+            setCompanyPhone(apiData.whatsapp_number.replace(/\D/g, ''));
         }
       })
       .catch(err => {
@@ -123,9 +117,7 @@ export default function AgendamentoPage() {
     const fetchOccupiedSlots = async () => {
       setLoadingSlots(true);
       try {
-        const dateParam = new Date(data).toISOString().split('T')[0];
-        
-        const res = await fetch(`${API_BASE_URL}/appointments/occupied-slots?company_id=${companyId}&date=${dateParam}`);
+        const res = await fetch(`${API_BASE_URL}/appointments/occupied-slots?company_id=${companyId}&date=${data}`);
         if (res.ok) {
           const fetchedSlots = await res.json();
           setOccupiedSlots(fetchedSlots);
@@ -140,18 +132,24 @@ export default function AgendamentoPage() {
     fetchOccupiedSlots();
   }, [data, companyId]);
 
-  // ==========================================
-  // FUNÇÕES AUXILIARES
-  // ==========================================
   const gerarDatas = () => {
     const datas: { value: string; label: string }[] = [];
     const hoje = new Date();
-    for (let i = 1; i <= 14; i++) {
+    
+    for (let i = 0; i <= 14; i++) {
       const d = new Date(hoje);
       d.setDate(d.getDate() + i);
-      if (d.getDay() !== 0) {
-        const value = d.toISOString().split('T')[0];
-        const label = d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+      
+      if (d.getDay() !== 0) { 
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const value = `${year}-${month}-${day}`;
+        
+        const label = i === 0 
+          ? 'Hoje' 
+          : d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+          
         datas.push({ value, label });
       }
     }
@@ -179,9 +177,6 @@ export default function AgendamentoPage() {
 
   const cartTotal = cart.reduce((acc, item) => acc + item.price, 0);
 
-  // ==========================================
-  // SUBMISSÃO DO AGENDAMENTO
-  // ==========================================
   const handleConfirmar = async (e: FormEvent) => {
     e.preventDefault();
     
@@ -199,7 +194,8 @@ export default function AgendamentoPage() {
     }
 
     setEnviando(true);
-    const appointmentDate = new Date(`${data}T${hora}:00`);
+    
+    const appointmentDateLocal = `${data}T${hora}:00`;
     
     let notesText = `Agendamento via app (Carrinho).`;
     if (cartServices.length > 1) {
@@ -216,7 +212,7 @@ export default function AgendamentoPage() {
         body: JSON.stringify({
           company_id: companyId,
           service_id: cartServices[0].id, 
-          appointment_date: appointmentDate.toISOString(),
+          appointment_date: appointmentDateLocal, 
           customer_name: nome,
           customer_phone: telefone,
           notes: notesText,
@@ -250,9 +246,6 @@ export default function AgendamentoPage() {
     }
   };
 
-  // ==========================================
-  // TELA DE SUCESSO
-  // ==========================================
   if (sucesso) {
     return (
       <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-6">
@@ -286,13 +279,9 @@ export default function AgendamentoPage() {
     );
   }
 
-  // ==========================================
-  // TELA PRINCIPAL (VITRINE & SERVIÇOS)
-  // ==========================================
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans pb-24 relative">
       
-      {/* HEADER */}
       <header className="bg-black/50 backdrop-blur-md border-b border-white/[0.04] h-16 flex items-center px-4 sticky top-0 z-40">
         <div className="flex items-center w-full">
           <button onClick={() => router.push('/')} className="p-2 -ml-2 text-zinc-400 hover:text-white transition">
@@ -307,7 +296,6 @@ export default function AgendamentoPage() {
 
       <div className="p-4 space-y-6 max-w-2xl mx-auto">
         
-        {/* ABAS */}
         <div className="flex p-1 bg-[#121214] border border-white/5 rounded-xl">
           <button 
             onClick={() => setActiveTab('services')}
@@ -327,7 +315,6 @@ export default function AgendamentoPage() {
           </button>
         </div>
 
-        {/* CONTEÚDO DAS ABAS */}
         {loading ? (
           <div className="text-center py-20">
             <div className="w-8 h-8 border-2 border-zinc-800 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
@@ -336,7 +323,6 @@ export default function AgendamentoPage() {
         ) : (
           <div className="space-y-3 pb-6 animate-in fade-in duration-300">
             
-            {/* ABA SERVIÇOS */}
             {activeTab === 'services' && (
               services.length === 0 ? (
                 <p className="text-center text-zinc-500 py-10 bg-[#0A0A0A] rounded-xl border border-dashed border-white/10">Nenhum serviço disponível no momento.</p>
@@ -373,7 +359,6 @@ export default function AgendamentoPage() {
               )
             )}
 
-            {/* ABA PRODUTOS */}
             {activeTab === 'products' && (
               products.length === 0 ? (
                 <p className="text-center text-zinc-500 py-10 bg-[#0A0A0A] rounded-xl border border-dashed border-white/10">Nenhum produto na loja no momento.</p>
@@ -416,9 +401,6 @@ export default function AgendamentoPage() {
         )}
       </div>
 
-      {/* ==========================================
-          BOTÃO FLUTUANTE DO CARRINHO
-      ========================================== */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-40">
         <button
           onClick={() => cart.length > 0 && setIsCartOpen(true)}
@@ -450,15 +432,11 @@ export default function AgendamentoPage() {
         </button>
       </div>
 
-      {/* ==========================================
-          MODAL DO CARRINHO (CHECKOUT)
-      ========================================== */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           
           <div className="bg-[#0A0A0A] w-full max-w-md h-full md:h-[90vh] md:mt-[5vh] md:rounded-3xl border border-white/10 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 overflow-hidden">
             
-            {/* Header Modal */}
             <div className="flex justify-between items-center p-5 border-b border-white/5 shrink-0 bg-[#0B0B0B]">
               <h3 className="font-bold text-base flex items-center gap-2 text-white">
                 <ShoppingCart className="text-blue-500" size={18} /> Seu Pedido
@@ -470,7 +448,6 @@ export default function AgendamentoPage() {
             
             <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
               
-              {/* Resumo dos Itens */}
               <div className="space-y-2 mb-8">
                 <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Itens Selecionados</h4>
                 <div className="bg-[#121214] border border-white/5 rounded-xl p-2 space-y-1">
@@ -490,7 +467,6 @@ export default function AgendamentoPage() {
                 </div>
               </div>
 
-              {/* Formulário de Finalização */}
               <form id="checkout-form" onSubmit={handleConfirmar} className="space-y-5">
                 <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Dados do Agendamento</h4>
                 
@@ -523,7 +499,7 @@ export default function AgendamentoPage() {
                         }} 
                         className="w-full bg-[#121214] border border-white/5 rounded-xl pl-9 pr-2 py-3.5 text-sm text-white focus:border-blue-500 outline-none transition appearance-none cursor-pointer">
                         <option value="">Selecione a data</option>
-                        {gerarDatas().map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                        {isMounted && gerarDatas().map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                       </select>
                     </div>
                   </div>
@@ -566,7 +542,6 @@ export default function AgendamentoPage() {
 
             </div>
 
-            {/* Footer do Modaal */}
             <div className="p-5 border-t border-white/5 bg-[#0B0B0B] shrink-0">
               <button
                 type="submit"

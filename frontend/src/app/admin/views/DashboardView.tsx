@@ -8,6 +8,7 @@ import { API_BASE_URL } from '@/lib/api';
 
 // 🔥 Importando o novo componente
 import DailyAppointments from '../components/DailyAppointments';
+import PushNotificationButton from '../components/PushNotificationButton';
 
 interface TopService {
   name: string;
@@ -193,6 +194,11 @@ export default function DashboardView({ token, onUnauthorized, onSuspended }: Da
           <h3 className="text-3xl font-extrabold text-white mb-1">{metrics.total_appointments}</h3>
           <p className="text-xs text-zinc-500 font-medium">Volume total do período</p>
         </div>
+      </div>
+
+      {/* 🔔 BOTÃO DE ATIVAR NOTIFICAÇÕES */}
+      <div className="flex justify-end mb-4">
+        <PushNotificationButton token={token} />
       </div>
 
       {/* 🔥 INSERINDO O NOVO COMPONENTE AQUI */}

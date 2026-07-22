@@ -231,3 +231,22 @@ class Product(SQLModel, table=True):
     image_url: str | None = None
     active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ----------------------------------------------------------------
+# NOTIFICAÇÕES WEB PUSH
+# ----------------------------------------------------------------
+
+class PushSubscription(SQLModel, table=True):
+    __tablename__ = "push_subscriptions"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    company_id: int = Field(foreign_key="companies.id", index=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+
+    # 'endpoint' é único por navegador/dispositivo inscrito
+    endpoint: str = Field(unique=True, index=True)
+    p256dh: str  # chave pública de criptografia do navegador
+    auth: str    # segredo de autenticação do navegador
+
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

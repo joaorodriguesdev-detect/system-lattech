@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from app.core.database import get_session
 from app.core.security import get_current_company
-from app.models import Appointment, AppointmentStatus, Company, User
+from app.models import Appointment, AppointmentStatus, Company, User, Service
 
 from app.services.appointment_service import (
     get_appointments_by_customer,
@@ -14,6 +14,7 @@ from app.services.appointment_service import (
     get_occupied_slots,
     update_appointment_status,
 )
+from app.services import push_service
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
@@ -106,6 +107,24 @@ def create_appointment_route(
         session.add(new_appointment)
         session.commit()
         session.refresh(new_appointment)
+
+        # 🔔 Dispara a notificação push pro dono da barbearia (não deve
+        # nunca quebrar a criação do agendamento caso falhe)
+        try:
+            service_obj = session.get(Service, appointment_data.service_id)
+            service_name = service_obj.name if service_obj else "Serviço"
+            time_str = appointment_data.appointment_date.strftime("%H:%M")
+
+            push_service.notify_new_appointment(
+                session=session,
+                company_id=appointment_data.company_id,
+                customer_name=appointment_data.customer_name,
+                service_name=service_name,
+                time_str=time_str,
+            )
+        except Exception as push_err:
+            # Loga mas não impede o agendamento de ser criado
+            print(f"[ERRO NOTIFICAÇÃO PUSH] {push_err}")
 
         return new_appointment
         

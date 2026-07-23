@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, MapPin, Star, ChevronRight, X, Image as ImageIcon, Scissors, Zap, Check, Lock } from 'lucide-react';
+import { CalendarDays, MapPin, Star, X, Image as ImageIcon, Scissors, Zap, Check, Lock } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 // Seus componentes originais
@@ -146,94 +146,80 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#050505] text-white font-sans overflow-hidden flex flex-col items-center">
       
-      {/* Background com Imagem e Overlay */}
-      <div className="absolute inset-0 z-0 pointer-events-none flex items-start justify-center">
-        <div className="absolute inset-0 bg-[url('/imagens/fundoapp.png')] bg-cover bg-center bg-no-repeat opacity-60"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/30 via-[#050505]/70 to-[#050505]"></div>
-        <div className="w-[400px] h-[400px] bg-blue-600/30 blur-[120px] rounded-full mt-[-100px] absolute"></div>
+      {/* Fundo preto sólido, com uma vinheta bem sutil só pra dar profundidade sem "gritar" */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[#030303]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.04),_transparent_60%)]"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md px-6 pt-16 pb-10 flex flex-col items-center min-h-screen">
         
         {/* LOGO DA EMPRESA */}
-        <div className="relative w-32 h-32 mb-6">
-          <div className="absolute inset-0 bg-blue-500/10 rounded-2xl blur-xl"></div>
-          <div className="relative w-full h-full rounded-2xl border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-2xl">
+        <div className="relative w-20 h-20 mb-5">
+          <div className="relative w-full h-full rounded-2xl border border-white/10 bg-[#0A0A0A] flex items-center justify-center overflow-hidden">
             {companyLogo ? (
               <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-2" />
             ) : (
-              <Scissors size={36} className="text-zinc-700" />
+              <Scissors size={26} className="text-zinc-700" />
             )}
           </div>
         </div>
 
-        {/* NOME DA EMPRESA COM FONTE VINTAGE (RYE) */}
-        <div className="text-center mb-10 space-y-3">
-          <h1 className="text-4xl font-[family-name:var(--font-rye)] tracking-widest text-white drop-shadow-md">
+        {/* NOME DA EMPRESA - reduzido, mais discreto/premium */}
+        <div className="text-center mb-9 space-y-2">
+          <h1 className="text-2xl font-[family-name:var(--font-rye)] tracking-wide text-white">
             {companyName}
           </h1>
-          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] drop-shadow-sm">
+          <p className="text-zinc-600 text-[9px] font-semibold uppercase tracking-[0.25em]">
             Cabelo, Barba & Bigode !
           </p>
         </div>
 
-        {/* MENU DE OPÇÕES */}
-        <div className="w-full space-y-3.5">
+        {/* MENU DE OPÇÕES - botões menores, sem glow, mais espaçados */}
+        <div className="w-full space-y-3">
           
-          {/* BOTÃO CORRIGIDO PARA USAR <Link> DO NEXT.JS */}
+          {/* CTA principal com cor invertida (fundo claro) pra se destacar sem neon */}
           <Link 
             href="/agendamento"
-            className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 backdrop-blur-md transition-all duration-300 active:scale-[0.98] shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+            className="w-full group flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-white hover:bg-zinc-200 transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3.5">
-              <CalendarDays size={22} className="text-blue-400 group-hover:scale-110 transition-transform duration-300" />
-              <span className="font-bold text-blue-400 text-base tracking-wide">Agendar Horário</span>
-            </div>
-            <ChevronRight className="text-blue-400/60 group-hover:text-blue-400 transition-colors" size={20} />
+            <CalendarDays size={18} className="text-black" />
+            <span className="font-semibold text-black text-sm tracking-wide">Agendar Horário</span>
           </Link>
 
           <button 
             onClick={() => setShowPostsModal(true)}
-            className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-md transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3.5">
-              <ImageIcon size={22} className="text-zinc-300 group-hover:text-white transition-colors" />
-              <span className="font-semibold text-zinc-200 text-base group-hover:text-white transition-colors">Nossos serviços</span>
-            </div>
-            <ChevronRight className="text-zinc-500 group-hover:text-zinc-300 transition-colors" size={20} />
+            <ImageIcon size={18} className="text-zinc-400 group-hover:text-white transition-colors" />
+            <span className="font-medium text-zinc-300 text-sm group-hover:text-white transition-colors">Nossos serviços</span>
           </button>
 
           <button 
             onClick={() => setShowLocationModal(true)}
-            className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-md transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3.5">
-              <MapPin size={22} className="text-zinc-300 group-hover:text-white transition-colors" />
-              <span className="font-semibold text-zinc-200 text-base group-hover:text-white transition-colors">Nossa localização</span>
-            </div>
-            <ChevronRight className="text-zinc-500 group-hover:text-zinc-300 transition-colors" size={20} />
+            <MapPin size={18} className="text-zinc-400 group-hover:text-white transition-colors" />
+            <span className="font-medium text-zinc-300 text-sm group-hover:text-white transition-colors">Nossa localização</span>
           </button>
 
           <button 
             onClick={() => setShowReviewsModal(true)}
-            className="w-full group flex items-center justify-between px-5 py-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-md transition-all duration-300 active:scale-[0.98]"
+            className="w-full group flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all duration-300 active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3.5">
-              <Star size={22} className="text-zinc-300 group-hover:text-white transition-colors" />
-              <span className="font-semibold text-zinc-200 text-base group-hover:text-white transition-colors">Avaliações</span>
-            </div>
-            <ChevronRight className="text-zinc-500 group-hover:text-zinc-300 transition-colors" size={20} />
+            <Star size={18} className="text-zinc-400 group-hover:text-white transition-colors" />
+            <span className="font-medium text-zinc-300 text-sm group-hover:text-white transition-colors">Avaliações</span>
           </button>
 
         </div>
 
         {/* RODAPÉ (FOOTER) REFORMULADO */}
-        <footer className="mt-auto pt-16 flex flex-col items-center justify-center gap-4">
+        <footer className="mt-auto pt-14 flex flex-col items-center justify-center gap-3.5">
           
           {/* SVG Nativo do Instagram para evitar erro de exportação do lucide-react antigo */}
-          <div className="flex items-center gap-3">
-            <a href="https://www.instagram.com/lattechapp/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-400 hover:text-white transition-all" aria-label="Instagram">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <div className="flex items-center gap-2.5">
+            <a href="https://www.instagram.com/lattechapp/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] text-zinc-500 hover:text-white transition-all" aria-label="Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                 <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
@@ -241,18 +227,16 @@ export default function Home() {
             </a>
 
             {/* 🔒 Acesso discreto ao painel administrativo da barbearia */}
-            <Link href="/admin" className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-400 hover:text-white transition-all" aria-label="Acesso administrativo">
-              <Lock size={16} />
+            <Link href="/admin" className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] text-zinc-500 hover:text-white transition-all" aria-label="Acesso administrativo">
+              <Lock size={14} />
             </Link>
           </div>
 
-          <div className="flex flex-col items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-            <div className="flex items-center gap-1.5 text-zinc-400">
-               <span className="text-[10px] uppercase tracking-widest drop-shadow-md">Desenvolvido por</span>
-            </div>
-            <a href="https://lattech.com.br" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-500 hover:text-blue-400 transition-colors">
-              <Zap size={14} />
-              <span className="text-xs font-bold uppercase tracking-widest drop-shadow-md">LATTECH</span>
+          <div className="flex flex-col items-center gap-1 opacity-50 hover:opacity-100 transition-opacity">
+            <span className="text-[9px] uppercase tracking-widest text-zinc-500">Desenvolvido por</span>
+            <a href="https://lattech.com.br" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-zinc-400 hover:text-white transition-colors">
+              <Zap size={12} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">LATTECH</span>
             </a>
           </div>
         </footer>

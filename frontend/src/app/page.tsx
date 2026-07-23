@@ -6,6 +6,7 @@ import { API_BASE_URL } from '@/lib/api';
 
 // Seus componentes originais
 import ReviewsSummary from '../components/ReviewsSummary';
+import PortfolioCarousel from '../components/PortfolioCarousel';
 
 interface Post {
   id: number;
@@ -213,30 +214,9 @@ export default function Home() {
 
         </div>
 
-        {/* PRÉVIA DO PORTFÓLIO - preenche o espaço com trabalho real, reforça credibilidade */}
+        {/* PRÉVIA DO PORTFÓLIO - carrossel coverflow, avança sozinho a cada 2s */}
         {posts.length > 0 && (
-          <div className="w-full mt-10">
-            <div className="flex items-center justify-between mb-3 px-0.5">
-              <span className="text-zinc-500 text-[10px] font-semibold uppercase tracking-[0.2em]">Nosso Trabalho</span>
-              <button
-                onClick={() => setShowPostsModal(true)}
-                className="text-zinc-500 hover:text-white text-[10px] font-semibold uppercase tracking-wide transition-colors"
-              >
-                Ver tudo
-              </button>
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-6 px-6">
-              {posts.slice(0, 6).map((post) => (
-                <button
-                  key={post.id}
-                  onClick={() => setShowPostsModal(true)}
-                  className="shrink-0 w-24 h-24 rounded-xl overflow-hidden border border-white/[0.06] bg-[#0A0A0A]"
-                >
-                  <img src={post.image_url} alt="Trabalho" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          </div>
+          <PortfolioCarousel posts={posts} onOpenAll={() => setShowPostsModal(true)} />
         )}
 
         {/* RODAPÉ (FOOTER) REFORMULADO */}

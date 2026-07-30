@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { Users, UserPlus, X, UserCircle, Check, Loader2, DollarSign, Settings2, ShieldCheck, User } from 'lucide-react';
+import { Users, UserPlus, X, UserCircle, Check, Loader2, DollarSign, Settings2, ShieldCheck, User, Scissors } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 interface EquipeViewProps {

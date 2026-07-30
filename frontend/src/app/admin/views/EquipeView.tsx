@@ -124,7 +124,6 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
     setIsSavingCommission(true);
 
     try {
-      // O endpoint PATCH substitui o valor atual pelo novo no backend
       const res = await fetch(`${API_BASE_URL}/admin/barbers/${barberId}/commission`, {
         method: 'PATCH',
         headers: {
@@ -193,9 +192,15 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
         {/* LISTAGEM DE CARDS DA EQUIPE */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {team.map((member) => {
+            // Conta os cortes concluídos e pega a receita bruta
             const { cutsCount, revenue } = getBarberMetrics(member.id);
+            
+            // Pega o valor exato salvo (ou modificado) e calcula a comissão
             const currentCommVal = parseFloat((commissionValues[member.id] || '0').replace(',', '.'));
+            
+            // A comissão é puramente a quantidade de cortes finalizados VEZES o valor da comissão cadastrada.
             const totalCommission = cutsCount * currentCommVal;
+            
             const hasCommission = currentCommVal > 0;
 
             return (

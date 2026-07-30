@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { Users, UserPlus, X, UserCircle, Check, Loader2, DollarSign, Settings2, ShieldCheck, User, Scissors } from 'lucide-react';
+import { Users, UserPlus, X, UserCircle, Check, Loader2, DollarSign, Settings2, ShieldCheck, Scissors } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 interface EquipeViewProps {
@@ -31,9 +31,12 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
   useEffect(() => {
     const vals: Record<number, string> = {};
     team.forEach((member) => {
-      vals[member.id] = (member.commission_value ?? 0).toFixed(2);
+      // Garante que o valor venha limpo do backend e mapeado corretamente
+      vals[member.id] = (member.commission_value !== undefined && member.commission_value !== null) 
+        ? Number(member.commission_value).toFixed(2) 
+        : '0.00';
     });
-    setCommissionValues((prev) => ({ ...prev, ...vals }));
+    setCommissionValues(vals);
   }, [team]);
 
   useEffect(() => {
@@ -113,7 +116,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
     const barberId = activeModal.barberId;
     const rawValue = commissionValues[barberId] || '0';
     
-    // Substitui vírgula por ponto para o Pydantic aceitar
+    
     const numericValue = parseFloat(rawValue.replace(',', '.'));
 
     if (isNaN(numericValue) || numericValue < 0) {
@@ -124,13 +127,14 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
     setIsSavingCommission(true);
 
     try {
+      // Envia o PATCH para atualizar a comissão
       const res = await fetch(`${API_BASE_URL}/admin/barbers/${barberId}/commission`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ commission_value: numericValue }),
+        body: JSON.stringify({ commission_value: numericValue }), // numericValue é enviado puramente.
       });
 
       if (!res.ok) {
@@ -140,10 +144,10 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
 
       const result = await res.json();
       
-      // Atualiza o estado visual com o valor formatado novo
+      
       setCommissionValues((prev) => ({
         ...prev,
-        [barberId]: result.commission_value.toFixed(2),
+        [barberId]: Number(result.commission_value).toFixed(2),
       }));
       
       setActiveModal({ isOpen: false, barberId: null });
@@ -160,6 +164,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
     if (activeModal.barberId !== null) {
       const member = team.find((m) => m.id === activeModal.barberId);
       if (member) {
+        
         setCommissionValues((prev) => ({
           ...prev,
           [member.id]: (member.commission_value ?? 0).toFixed(2),
@@ -192,13 +197,12 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
         {/* LISTAGEM DE CARDS DA EQUIPE */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {team.map((member) => {
-            // Conta os cortes concluídos e pega a receita bruta
             const { cutsCount, revenue } = getBarberMetrics(member.id);
             
-            // Pega o valor exato salvo (ou modificado) e calcula a comissão
+            
             const currentCommVal = parseFloat((commissionValues[member.id] || '0').replace(',', '.'));
             
-            // A comissão é puramente a quantidade de cortes finalizados VEZES o valor da comissão cadastrada.
+            
             const totalCommission = cutsCount * currentCommVal;
             
             const hasCommission = currentCommVal > 0;
@@ -233,7 +237,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
                   </div>
                 </div>
 
-                {/* STATUS DE SERVIÇOS & BOTÃO DE COMISSÃO (AJUSTADO PARA MOBILE) */}
+                {/* STATUS DE SERVIÇOS & BOTÃO DE COMISSÃO */}
                 <div className="bg-[#121214] border border-white/5 rounded-2xl p-4 mt-2">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
@@ -380,7 +384,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
                     type="text"
                     autoFocus
                     placeholder="0.00"
-                    value={commissionValues[activeModal.barberId]}
+                    value={commissionValues[activeModal.barberId] || ''}
                     onChange={(e) =>
                       setCommissionValues((prev) => ({
                         ...prev,

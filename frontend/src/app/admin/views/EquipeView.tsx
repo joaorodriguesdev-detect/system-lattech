@@ -30,6 +30,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
   useEffect(() => {
     const vals: Record<number, string> = {};
     team.forEach((member) => {
+      // Exibe usando ponto para facilitar a formatação no input controlado
       vals[member.id] = (member.commission_value ?? 0).toFixed(2);
     });
     setCommissionValues((prev) => ({ ...prev, ...vals }));
@@ -76,7 +77,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
         body: JSON.stringify({
           name: newBarberName.trim(),
           phone: newBarberPhone.trim(),
-          commission_value: parseFloat(newBarberCommission) || 0,
+          commission_value: parseFloat(newBarberCommission.replace(',', '.')) || 0,
         }),
       });
 
@@ -103,10 +104,12 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
     
     const barberId = activeModal.barberId;
     const rawValue = commissionValues[barberId] || '0';
+    
+    // 🔥 Correção cirúrgica: substitui vírgula por ponto para o Pydantic aceitar
     const numericValue = parseFloat(rawValue.replace(',', '.'));
 
     if (isNaN(numericValue) || numericValue < 0) {
-      alert("Por favor, insira um valor numérico válido.");
+      alert("Por favor, insira um valor numérico válido (ex: 15.00 ou 15,00).");
       return;
     }
 
@@ -134,7 +137,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
       }));
       
       setActiveModal({ isOpen: false, barberId: null });
-      await fetchTeam(); // Atualiza a equipe para refletir mudanças globais se necessário
+      await fetchTeam(); // Atualiza a equipe
     } catch (err: any) {
       console.error('Erro ao salvar comissão:', err);
       alert('Erro ao salvar o valor da comissão.');
@@ -205,9 +208,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
               <div>
                 <label className="block text-[10px] uppercase font-bold text-zinc-400 tracking-widest mb-1.5">Valor Fixo por Corte (R$)</label>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
                   placeholder="Ex: 15.00"
                   value={newBarberCommission}
                   onChange={(e) => setNewBarberCommission(e.target.value)}
@@ -237,7 +238,7 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {team.map((member) => {
             const { cutsCount, revenue } = getBarberMetrics(member.id);
-            const currentCommVal = parseFloat(commissionValues[member.id] || '0');
+            const currentCommVal = parseFloat((commissionValues[member.id] || '0').replace(',', '.'));
             const totalCommission = cutsCount * currentCommVal;
 
             return (
@@ -326,10 +327,9 @@ export default function EquipeView({ token, team, fetchTeam, servicesMap }: Equi
                 <div className="relative max-w-[200px] mx-auto">
                   <span className="absolute left-4 top-4 text-zinc-500 font-bold">R$</span>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text" // 🔥 Correção cirúrgica: alterado para text
                     autoFocus
+                    placeholder="0.00"
                     value={commissionValues[activeModal.barberId]}
                     onChange={(e) =>
                       setCommissionValues((prev) => ({
